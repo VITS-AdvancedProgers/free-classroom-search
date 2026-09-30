@@ -1,7 +1,7 @@
-
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { CalendarDays } from "lucide-react";
 
 type DateSelectorProps = {
   date: string;
@@ -204,7 +204,10 @@ export default function DateSelector({
               )
             )}
           </div>
-
+           <CalendarDays
+              size={22}
+              strokeWidth={1.8}
+            /> 
           <div className="calendar-footer">
             <button
               type="button"

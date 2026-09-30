@@ -7,6 +7,7 @@ import { useRooms } from "./hooks/useRooms";
 import DateSelector from "./components/DateSelector";
 import RoomFilters from "./components/RoomFilters";
 import RoomGrid from "./components/RoomGrid";
+import { Grid2X2, List } from "lucide-react";
 
 type View = "grid" | "list";
 function getCurrentPeriod() {
@@ -260,25 +261,27 @@ export default function Home() {
               className="view-toggle"
               aria-label="Вид аудиторий"
             >
-              <button
-                type="button"
-                className={view === "grid" ? "view-active" : ""}
-                onClick={() => setView("grid")}
-                aria-label="Сетка"
-                aria-pressed={view === "grid"}
-              >
-                ▦
-              </button>
+              <div className="view-toggle" aria-label="Вид аудиторий">
+                <button
+                  type="button"
+                  className={view === "grid" ? "view-active" : ""}
+                  onClick={() => setView("grid")}
+                  aria-label="Сетка"
+                  aria-pressed={view === "grid"}
+                >
+                  <Grid2X2 size={18} strokeWidth={2} />
+                </button>
 
-              <button
-                type="button"
-                className={view === "list" ? "view-active" : ""}
-                onClick={() => setView("list")}
-                aria-label="Список"
-                aria-pressed={view === "list"}
-              >
-                ☷
-              </button>
+                <button
+                  type="button"
+                  className={view === "list" ? "view-active" : ""}
+                  onClick={() => setView("list")}
+                  aria-label="Список"
+                  aria-pressed={view === "list"}
+                >
+                  <List size={18} strokeWidth={2} />
+                </button>
+              </div>
             </div>
           </div>
         </section>

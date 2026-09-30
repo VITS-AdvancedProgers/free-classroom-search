@@ -1338,3 +1338,12 @@ button {
   box-sizing: border-box;
 }
 
+.view-toggle button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.view-toggle button svg {
+  flex-shrink: 0;
+}
