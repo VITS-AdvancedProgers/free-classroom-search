@@ -9,18 +9,62 @@ import RoomFilters from "./components/RoomFilters";
 import RoomGrid from "./components/RoomGrid";
 
 type View = "grid" | "list";
+function getCurrentPeriod() {
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
+  const currentIndex = periods.findIndex((period) => {
+    const [start, end] = period.time.split("–").map((time) => {
+      const [hours, minutes] = time.trim().split(":").map(Number);
+      return hours * 60 + minutes;
+    });
+
+    return currentMinutes >= start && currentMinutes < end;
+  });
+
+  if (currentIndex !== -1) {
+    return currentIndex;
+  }
+
+  // Если сейчас перерыв — выбираем следующую пару
+  const nextIndex = periods.findIndex((period) => {
+    const [start] = period.time.split("–").map((time) => {
+      const [hours, minutes] = time.trim().split(":").map(Number);
+      return hours * 60 + minutes;
+    });
+
+    return currentMinutes < start;
+  });
+
+  // Если все пары закончились, выбираем последнюю
+  return nextIndex !== -1 ? nextIndex : periods.length - 1;
+}
 export default function Home() {
   const [date, setDate] = useState(() => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, "0");
-    const day = String(today.getDate()).padStart(2, "0");
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
 
     return `${year}-${month}-${day}`;
   });
 
   const [period, setPeriod] = useState(0);
+      useEffect(() => {
+    const today = new Date();
+    const todayString = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, "0"),
+      String(today.getDate()).padStart(2, "0"),
+    ].join("-");
+
+    if (date === todayString) {
+      setPeriod(getCurrentPeriod());
+    } else {
+      setPeriod(0);
+    }
+  }, [date]);
+
   const [floor, setFloor] = useState("all");
   const [view, setView] = useState<View>("grid");
   const [now, setNow] = useState(() => new Date());
