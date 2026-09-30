@@ -1331,3 +1331,10 @@ button {
     font-size: 14px;
   }
 }
+/* Текущая пара */
+.period-card.current-period {
+  border: 1.5px solid #16a34a;
+  position: relative;
+  box-sizing: border-box;
+}
+
