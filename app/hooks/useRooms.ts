@@ -14,12 +14,25 @@ type ApiLesson = {
   дисциплина: string;
   преподаватель: string;
   дата: string;
+  typeWeekID?: number;
 };
 
 type ApiSchedule = {
   data: {
     rasp: ApiLesson[];
+    info?: {
+      date?: string;
+      lastDate?: string;
+    };
   };
+};
+
+export type WeekLesson = {
+  date: string;
+  period: number;
+  typeWeekID: number;
+  subject: string;
+  teacher: string;
 };
 
 type CacheEntry<T> = {
@@ -29,11 +42,9 @@ type CacheEntry<T> = {
 
 const ROOMS_CACHE_KEY = "rooms-cache";
 const SCHEDULE_CACHE_KEY = "schedule-cache";
-
 const ROOMS_CACHE_TIME = 30 * 60 * 1000;
 const SCHEDULE_CACHE_TIME = 5 * 60 * 1000;
 
-// Читаем данные из localStorage
 function readCache<T>(key: string): T | null {
   try {
     const saved = localStorage.getItem(key);
@@ -52,7 +63,6 @@ function readCache<T>(key: string): T | null {
   }
 }
 
-// Сохраняем данные в localStorage
 function writeCache<T>(
   key: string,
   data: T,
@@ -70,16 +80,40 @@ function writeCache<T>(
   }
 }
 
+function getDateString(date: Date): string {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
+}
+
+function getWeekDates(date: string): string[] {
+  const selected = new Date(`${date}T12:00:00`);
+  const day = selected.getDay();
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+
+  selected.setDate(selected.getDate() + mondayOffset);
+
+  return Array.from({ length: 7 }, (_, index) => {
+    const current = new Date(selected);
+    current.setDate(selected.getDate() + index);
+    return getDateString(current);
+  });
+}
+
 export function useRooms(date: string) {
   const [apiRooms, setApiRooms] = useState<ApiRoom[]>([]);
   const [schedule, setSchedule] = useState<
     Record<number, Room["lessons"]>
   >({});
+  const [weeklySchedule, setWeeklySchedule] = useState<
+    Record<number, WeekLesson[]>
+  >({});
   const [loading, setLoading] = useState(true);
   const [scheduleLoading, setScheduleLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Загружаем список аудиторий
   useEffect(() => {
     let cancelled = false;
 
@@ -87,7 +121,6 @@ export function useRooms(date: string) {
       setLoading(true);
       setError("");
 
-      // Сначала проверяем localStorage
       const cachedRooms = readCache<ApiRoom[]>(ROOMS_CACHE_KEY);
 
       if (cachedRooms) {
@@ -134,7 +167,6 @@ export function useRooms(date: string) {
     };
   }, []);
 
-  // Загружаем расписание выбранной даты
   useEffect(() => {
     if (apiRooms.length === 0) return;
 
@@ -143,27 +175,36 @@ export function useRooms(date: string) {
     async function loadSchedule() {
       setError("");
 
-      // Получаем весь кэш расписаний
       const cachedSchedules = readCache<
-        Record<string, Record<number, Room["lessons"]>>
+        Record<
+          string,
+          {
+            daily: Record<number, Room["lessons"]>;
+            weekly: Record<number, WeekLesson[]>;
+          }
+        >
       >(SCHEDULE_CACHE_KEY) ?? {};
 
-      // Проверяем, есть ли расписание для выбранной даты
-      const cachedSchedule = cachedSchedules[date];
+      const cached = cachedSchedules[date];
 
       if (
-        cachedSchedule &&
-        Object.keys(cachedSchedule).length === apiRooms.length
+        cached &&
+        Object.keys(cached.daily).length === apiRooms.length &&
+        Object.keys(cached.weekly).length === apiRooms.length
       ) {
-        setSchedule(cachedSchedule);
+        setSchedule(cached.daily);
+        setWeeklySchedule(cached.weekly);
         setScheduleLoading(false);
         return;
       }
 
       setSchedule({});
+      setWeeklySchedule({});
       setScheduleLoading(true);
 
       try {
+        const weekDates = getWeekDates(date);
+
         const results = await Promise.all(
           apiRooms.map(async (room) => {
             const params = new URLSearchParams({
@@ -182,34 +223,70 @@ export function useRooms(date: string) {
             }
 
             const result: ApiSchedule = await response.json();
-            const lessons: Room["lessons"] = Array(6).fill(null);
+            const dailyLessons: Room["lessons"] = Array(6).fill(null);
+            const weeklyLessons: WeekLesson[] = [];
 
-            for (const lesson of result.data.rasp) {
-              if (!lesson.дата.startsWith(date)) continue;
+            for (const lesson of result.data.rasp ?? []) {
+              const lessonDate = lesson.дата.slice(0, 10);
+              const period = lesson.номерЗанятия;
 
-              const index = lesson.номерЗанятия - 1;
+              if (
+                !weekDates.includes(lessonDate) ||
+                period < 1 ||
+                period > 6
+              ) {
+                continue;
+              }
 
-              if (index >= 0 && index < lessons.length) {
-                lessons[index] = {
+              const typeWeekID = lesson.typeWeekID ?? 0;
+
+              weeklyLessons.push({
+                date: lessonDate,
+                period,
+                typeWeekID,
+                subject: lesson.дисциплина,
+                teacher: lesson.преподаватель,
+              });
+
+              if (lessonDate === date) {
+                dailyLessons[period - 1] = {
                   subject: lesson.дисциплина,
                   teacher: lesson.преподаватель,
                 };
               }
             }
 
-            return [room.id, lessons] as const;
+            return [
+              room.id,
+              dailyLessons,
+              weeklyLessons,
+            ] as const;
           })
         );
 
-        const newSchedule = Object.fromEntries(results);
+        const newSchedule = Object.fromEntries(
+          results.map(([id, daily]) => [id, daily])
+        );
 
-        // Обновляем кэш расписаний
+        const newWeeklySchedule = Object.fromEntries(
+          results.map(([id, , weekly]) => [id, weekly])
+        );
+
         const currentCache =
           readCache<
-            Record<string, Record<number, Room["lessons"]>>
+            Record<
+              string,
+              {
+                daily: Record<number, Room["lessons"]>;
+                weekly: Record<number, WeekLesson[]>;
+              }
+            >
           >(SCHEDULE_CACHE_KEY) ?? {};
 
-        currentCache[date] = newSchedule;
+        currentCache[date] = {
+          daily: newSchedule,
+          weekly: newWeeklySchedule,
+        };
 
         writeCache(
           SCHEDULE_CACHE_KEY,
@@ -219,6 +296,7 @@ export function useRooms(date: string) {
 
         if (!cancelled) {
           setSchedule(newSchedule);
+          setWeeklySchedule(newWeeklySchedule);
         }
       } catch (err) {
         if (!cancelled) {
@@ -245,6 +323,7 @@ export function useRooms(date: string) {
   return {
     apiRooms,
     schedule,
+    weeklySchedule,
     loading,
     scheduleLoading,
     error,

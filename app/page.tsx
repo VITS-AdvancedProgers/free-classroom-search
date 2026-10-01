@@ -109,11 +109,12 @@ export default function Home() {
   }, [date]);
 
   const {
-    apiRooms,
-    schedule,
-    loading,
-    scheduleLoading,
-    error,
+  apiRooms,
+  schedule,
+  weeklySchedule,
+  loading,
+  scheduleLoading,
+  error,
   } = useRooms(date);
 
   // Индикатор показывается только во время реально идущей пары.
@@ -338,6 +339,8 @@ export default function Home() {
             rooms={visibleRooms}
             period={period + 1}
             view={view}
+            weeklySchedule={weeklySchedule}
+            date={date}
           />
         )}
 
