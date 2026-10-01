@@ -1347,3 +1347,232 @@ button {
 .view-toggle button svg {
   flex-shrink: 0;
 }
+
+/* Табличный режим аудиторий */
+
+.room-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.room-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.room-table th {
+  padding: 16px 20px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.room-table td {
+  padding: 16px 20px;
+  color: #334155;
+  font-size: 14px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.room-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.room-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.room-table .table-room-number {
+  font-weight: 700;
+  color: #1e293b;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .room-table th,
+  .room-table td {
+    padding: 12px;
+    font-size: 12px;
+  }
+}
+
+/* Таблица расписания на день */
+
+
+/* Компактная таблица расписания */
+
+.room-table-wrapper {
+  width: 100%;
+  max-height: 70vh;
+  overflow: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.room-table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: left;
+}
+
+/* Заголовки */
+.room-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  height: 40px;
+  padding: 8px 12px;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Все ячейки */
+.room-table th,
+.room-table td {
+  padding: 8px 10px;
+  border-right: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: middle;
+}
+
+/* Столбец с парами */
+.room-table .room-table-period {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  width: 95px;
+  min-width: 95px;
+  background: #f8fafc;
+  color: #334155;
+  font-weight: 600;
+  text-align: left;
+}
+
+.room-table thead .room-table-period {
+  z-index: 3;
+  text-align: center;
+}
+
+.room-table-period span,
+.room-table-period small {
+  display: block;
+}
+
+.room-table-period span {
+  font-size: 13px;
+}
+
+.room-table-period small {
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+/* Столбцы аудиторий */
+.room-table thead th:not(:first-child),
+.room-table tbody td {
+  width: 160px;
+  min-width: 160px;
+  max-width: 160px;
+}
+
+.room-table td {
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.room-table tbody tr:hover td {
+  background: #f8fafc;
+}
+
+.room-table tbody tr:hover .room-table-period {
+  background: #f1f5f9;
+}
+
+/* Информация о занятии */
+.table-lesson {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.table-status {
+  display: inline-flex;
+  width: fit-content;
+  padding: 4px 7px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.table-status.available {
+  color: #15803d;
+  background: #dcfce7;
+}
+
+.table-status.occupied {
+  color: #b45309;
+  background: #fef3c7;
+}
+
+.table-subject {
+  color: #334155;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.table-teacher {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+/* Границы */
+.room-table tr:last-child th,
+.room-table tr:last-child td {
+  border-bottom: none;
+}
+
+.room-table th:last-child,
+.room-table td:last-child {
+  border-right: none;
+}
+
+/* Мобильная версия */
+@media (max-width: 600px) {
+  .room-table .room-table-period {
+    width: 90px;
+    min-width: 90px;
+  }
+
+  .room-table thead th:not(:first-child),
+  .room-table tbody td {
+    width: 145px;
+    min-width: 145px;
+    max-width: 145px;
+  }
+}
+@media (max-width: 650px) {
+  .floor-all {
+    display: none;
+  }
+}

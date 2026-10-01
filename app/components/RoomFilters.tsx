@@ -14,11 +14,9 @@ export default function RoomFilters({
     <div className="floor-filters" aria-label="Фильтр по этажам">
       <button
         type="button"
-        className={
-          floor === "all"
-            ? "floor-button active"
-            : "floor-button"
-        }
+        className={`floor-button floor-all ${
+          floor === "all" ? "active" : ""
+        }`}
         onClick={() => setFloor("all")}
       >
         Все
@@ -35,7 +33,7 @@ export default function RoomFilters({
           }
           onClick={() => setFloor(item)}
         >
-          {item} этаж
+          {item}
         </button>
       ))}
     </div>

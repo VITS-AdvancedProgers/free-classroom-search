@@ -7,14 +7,16 @@ import { useRooms } from "./hooks/useRooms";
 import DateSelector from "./components/DateSelector";
 import RoomFilters from "./components/RoomFilters";
 import RoomGrid from "./components/RoomGrid";
-import { Grid2X2, List } from "lucide-react";
+import { Grid2X2, List, Table } from "lucide-react";
 
-type View = "grid" | "list";
-function getCurrentPeriod() {
-  const now = new Date();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+type View = "grid" | "list" | "table";
 
-  const currentIndex = periods.findIndex((period) => {
+// Возвращает индекс пары, которая идёт прямо сейчас.
+// Если сейчас перемена или занятия закончились, возвращает -1.
+function getCurrentPeriod(date: Date): number {
+  const currentMinutes = date.getHours() * 60 + date.getMinutes();
+
+  return periods.findIndex((period) => {
     const [start, end] = period.time.split("–").map((time) => {
       const [hours, minutes] = time.trim().split(":").map(Number);
       return hours * 60 + minutes;
@@ -22,62 +24,89 @@ function getCurrentPeriod() {
 
     return currentMinutes >= start && currentMinutes < end;
   });
+}
 
+// Выбирает текущую или ближайшую следующую пару.
+// Если все пары закончились, выбирает последнюю.
+function getSelectedPeriod(date: Date): number {
+  const currentMinutes = date.getHours() * 60 + date.getMinutes();
+
+  const currentIndex = getCurrentPeriod(date);
   if (currentIndex !== -1) {
     return currentIndex;
   }
 
-  // Если сейчас перерыв — выбираем следующую пару
   const nextIndex = periods.findIndex((period) => {
-    const [start] = period.time.split("–").map((time) => {
-      const [hours, minutes] = time.trim().split(":").map(Number);
-      return hours * 60 + minutes;
-    });
-
-    return currentMinutes < start;
+    const [start] = period.time.split("–");
+    const [hours, minutes] = start.trim().split(":").map(Number);
+    return currentMinutes < hours * 60 + minutes;
   });
 
-  // Если все пары закончились, выбираем последнюю
   return nextIndex !== -1 ? nextIndex : periods.length - 1;
 }
+
+function getDateString(date: Date): string {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
+}
+
 export default function Home() {
-  const [date, setDate] = useState(() => {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, "0");
-  const day = String(today.getDate()).padStart(2, "0");
-
-    return `${year}-${month}-${day}`;
-  });
-
+  const [date, setDate] = useState(() => getDateString(new Date()));
   const [period, setPeriod] = useState(0);
-      useEffect(() => {
-    const today = new Date();
-    const todayString = [
-      today.getFullYear(),
-      String(today.getMonth() + 1).padStart(2, "0"),
-      String(today.getDate()).padStart(2, "0"),
-    ].join("-");
-
-    if (date === todayString) {
-      setPeriod(getCurrentPeriod());
-    } else {
-      setPeriod(0);
-    }
-  }, [date]);
-
   const [floor, setFloor] = useState("all");
   const [view, setView] = useState<View>("grid");
+  const [viewLoaded, setViewLoaded] = useState(false);
   const [now, setNow] = useState(() => new Date());
+  const [clockReady, setClockReady] = useState(false);
 
-  // Обновляем время каждую минуту
+  // Загружаем сохранённый режим просмотра.
   useEffect(() => {
+    const savedView = localStorage.getItem("rooms-view");
+
+    if (
+      savedView === "grid" ||
+      savedView === "list" ||
+      savedView === "table"
+    ) {
+      setView(savedView);
+    }
+
+    setViewLoaded(true);
+  }, []);
+
+  // Сохраняем выбранный режим просмотра.
+  useEffect(() => {
+    if (viewLoaded) {
+      localStorage.setItem("rooms-view", view);
+    }
+  }, [view, viewLoaded]);
+
+  // Обновляем время каждую минуту.
+  useEffect(() => {
+    setClockReady(true);
+
     const interval = setInterval(() => {
       setNow(new Date());
     }, 60000);
 
     return () => clearInterval(interval);
   }, []);
+
+  // При смене даты выбираем текущую или ближайшую пару.
+  // Для другой даты по умолчанию выбирается первая пара.
+  useEffect(() => {
+    const currentDate = new Date();
+    const todayString = getDateString(currentDate);
+
+    if (date === todayString) {
+      setPeriod(getSelectedPeriod(currentDate));
+    } else {
+      setPeriod(0);
+    }
+  }, [date]);
 
   const {
     apiRooms,
@@ -87,25 +116,10 @@ export default function Home() {
     error,
   } = useRooms(date);
 
-  // Определяем текущую пару
-  const today = [
-    now.getFullYear(),
-    String(now.getMonth() + 1).padStart(2, "0"),
-    String(now.getDate()).padStart(2, "0"),
-  ].join("-");
-
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-
-  const currentPeriod = periods.findIndex((item) => {
-    const [start, end] = item.time.split("–").map((value) => {
-      const [hours, minutes] = value.trim().split(":").map(Number);
-      return hours * 60 + minutes;
-    });
-
-    return currentMinutes >= start && currentMinutes < end;
-  });
-
+  // Индикатор показывается только во время реально идущей пары.
+  const today = getDateString(now);
   const isToday = date === today;
+  const currentPeriod = isToday ? getCurrentPeriod(now) : -1;
 
   const rooms = useMemo(
     () =>
@@ -216,17 +230,20 @@ export default function Home() {
           aria-label="Выбор пары"
         >
           {periods.map((item, index) => {
-            const isCurrent = isToday && index === currentPeriod;
+            const isCurrent =
+              clockReady &&
+              isToday &&
+              index === currentPeriod;
 
             return (
               <button
                 className={`period-card ${
-                  period === index ? "selected" : ""
+                clockReady && period === index ? "selected" : ""
                 } ${isCurrent ? "current-period" : ""}`}
                 key={item.name}
                 onClick={() => setPeriod(index)}
                 type="button"
-                aria-pressed={period === index}
+                aria-pressed={clockReady && period === index}
               >
                 {isCurrent && (
                   <span
@@ -257,31 +274,39 @@ export default function Home() {
                 : "Загрузка данных"}
             </div>
 
-            <div
-              className="view-toggle"
-              aria-label="Вид аудиторий"
-            >
-              <div className="view-toggle" aria-label="Вид аудиторий">
-                <button
-                  type="button"
-                  className={view === "grid" ? "view-active" : ""}
-                  onClick={() => setView("grid")}
-                  aria-label="Сетка"
-                  aria-pressed={view === "grid"}
-                >
-                  <Grid2X2 size={18} strokeWidth={2} />
-                </button>
+            <div className="view-toggle" aria-label="Вид аудиторий">
+              <button
+                type="button"
+                className={view === "grid" ? "view-active" : ""}
+                onClick={() => setView("grid")}
+                aria-label="Плитка"
+                aria-pressed={view === "grid"}
+                title="Плитка"
+              >
+                <Grid2X2 size={18} strokeWidth={2} />
+              </button>
 
-                <button
-                  type="button"
-                  className={view === "list" ? "view-active" : ""}
-                  onClick={() => setView("list")}
-                  aria-label="Список"
-                  aria-pressed={view === "list"}
-                >
-                  <List size={18} strokeWidth={2} />
-                </button>
-              </div>
+              <button
+                type="button"
+                className={view === "list" ? "view-active" : ""}
+                onClick={() => setView("list")}
+                aria-label="Список"
+                aria-pressed={view === "list"}
+                title="Список"
+              >
+                <List size={18} strokeWidth={2} />
+              </button>
+
+              <button
+                type="button"
+                className={view === "table" ? "view-active" : ""}
+                onClick={() => setView("table")}
+                aria-label="Таблица"
+                aria-pressed={view === "table"}
+                title="Таблица"
+              >
+                <Table size={18} strokeWidth={2} />
+              </button>
             </div>
           </div>
         </section>
