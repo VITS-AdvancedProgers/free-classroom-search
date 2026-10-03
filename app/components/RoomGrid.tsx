@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -21,7 +20,6 @@ type RoomGridProps = {
 type SelectedLesson = {
   subject: string;
   teacher: string;
-  weekType: string;
 } | null;
 
 const weekdays = [
@@ -35,12 +33,19 @@ const weekdays = [
 ];
 
 function getWeekDates(date: string) {
-  const selected = new Date(`${date || new Date().toISOString().slice(0, 10)}T12:00:00`);
+  const selected = new Date(
+    `${date || new Date().toISOString().slice(0, 10)}T12:00:00`
+  );
+
   const day = selected.getDay();
-  selected.setDate(selected.getDate() + (day === 0 ? -6 : 1 - day));
+
+  selected.setDate(
+    selected.getDate() + (day === 0 ? -6 : 1 - day)
+  );
 
   return weekdays.map((name, index) => {
     const current = new Date(selected);
+
     current.setDate(selected.getDate() + index);
 
     return {
@@ -93,129 +98,150 @@ export default function RoomGrid({
           <table className="room-table weekly-room-table">
             <thead>
               <tr>
-                <th className="room-table-period">День</th>
-                <th className="weekly-period">Пара</th>
+                <th className="room-table-period">
+                  День
+                </th>
+
+                <th className="weekly-period">
+                  Пара
+                </th>
+
                 {rooms.map((room) => (
-                  <th key={room.id}>{room.number}</th>
+                  <th key={room.id}>
+                    {room.number}
+                  </th>
                 ))}
               </tr>
             </thead>
 
             <tbody>
               {days.map((day) =>
-                periods.map((item, periodIndex) => (
-                  <tr key={`${day.date}-${item.name}`}>
-                    {periodIndex === 0 && (
-                      <th
-                        className="weekly-day"
-                        rowSpan={periods.length}
-                      >
-                        <span>{day.name}</span>
-                        <small>{day.shortDate}</small>
+                periods.map((item, periodIndex) => {
+                  const lessonNumber = periodIndex + 1;
+
+                  return (
+                    <tr
+                      key={`${day.date}-${item.name}`}
+                    >
+                      {periodIndex === 0 && (
+                        <th
+                          className="weekly-day"
+                          rowSpan={periods.length}
+                        >
+                          <span>{day.name}</span>
+                          <small>{day.shortDate}</small>
+                        </th>
+                      )}
+
+                      <th className="weekly-period">
+                        <span>{item.name}</span>
+                        <small>{item.time}</small>
                       </th>
-                    )}
 
-                    <th className="weekly-period">
-                      <span>{item.name}</span>
-                      <small>{item.time}</small>
-                    </th>
+                      {rooms.map((room) => {
+                        const numerator = getLesson(
+                          room.id,
+                          day.date,
+                          lessonNumber,
+                          1
+                        );
 
-                    {rooms.map((room) => {
-                      const numerator = getLesson(
-                        room.id,
-                        day.date,
-                        periodIndex + 1,
-                        1
-                      );
+                        const denominator = getLesson(
+                          room.id,
+                          day.date,
+                          lessonNumber,
+                          2
+                        );
 
-                      const denominator = getLesson(
-                        room.id,
-                        day.date,
-                        periodIndex + 1,
-                        2
-                      );
+                        return (
+                          <td key={room.id}>
+                            <div className="weekly-cell">
 
-                      return (
-                        <td key={room.id}>
-                          <div className="weekly-cell">
-                            <button
-                              type="button"
-                              className={`weekly-lesson ${
-                                numerator ? "occupied" : "available"
-                              }`}
-                              onClick={() =>
-                                numerator &&
-                                setSelectedLesson({
-                                  subject: numerator.subject,
-                                  teacher: numerator.teacher,
-                                  weekType:
-                                    numerator.typeWeekID === 0
-                                      ? "Каждую неделю"
-                                      : "Числитель",
-                                })
-                              }
-                              disabled={!numerator}
-                              title={
-                                numerator
-                                  ? "Посмотреть занятие"
-                                  : "Свободно"
-                              }
-                            >
-                              <span className="week-label">
-                                Числитель
-                              </span>
-                              <span>
-                                {numerator
-                                  ? numerator.subject
-                                  : "Свободно"}
-                              </span>
-                            </button>
+                              {/* ЧИСЛИТЕЛЬ */}
+                              <button
+                                type="button"
+                                className={`weekly-lesson ${
+                                  numerator
+                                    ? "occupied"
+                                    : "available"
+                                }`}
+                                onClick={() => {
+                                  if (!numerator) return;
 
-                            <div className="weekly-divider" />
+                                  setSelectedLesson({
+                                    subject: numerator.subject,
+                                    teacher: numerator.teacher,
+                                  });
+                                }}
+                                disabled={!numerator}
+                                title={
+                                  numerator
+                                    ? "Нажмите, чтобы посмотреть информацию"
+                                    : "Свободно"
+                                }
+                              >
+                                <span className="week-label">
+                                  Числитель
+                                </span>
 
-                            <button
-                              type="button"
-                              className={`weekly-lesson ${
-                                denominator ? "occupied" : "available"
-                              }`}
-                              onClick={() =>
-                                denominator &&
-                                setSelectedLesson({
-                                  subject: denominator.subject,
-                                  teacher: denominator.teacher,
-                                  weekType:
-                                    denominator.typeWeekID === 0
-                                      ? "Каждую неделю"
-                                      : "Знаменатель",
-                                })
-                              }
-                              disabled={!denominator}
-                              title={
-                                denominator
-                                  ? "Посмотреть занятие"
-                                  : "Свободно"
-                              }
-                            >
-                              <span className="week-label">
-                                Знаменатель
-                              </span>
-                              <span>
-                                {denominator
-                                  ? denominator.subject
-                                  : "Свободно"}
-                              </span>
-                            </button>
-                          </div>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))
+                                <span>
+                                  {numerator
+                                    ? "Занято"
+                                    : "Свободно"}
+                                </span>
+                              </button>
+
+                              <div className="weekly-divider" />
+
+                              {/* ЗНАМЕНАТЕЛЬ */}
+                              <button
+                                type="button"
+                                className={`weekly-lesson ${
+                                  denominator
+                                    ? "occupied"
+                                    : "available"
+                                }`}
+                                onClick={() => {
+                                  if (!denominator) return;
+
+                                  setSelectedLesson({
+                                    subject:
+                                      denominator.subject,
+                                    teacher:
+                                      denominator.teacher,
+                                  });
+                                }}
+                                disabled={!denominator}
+                                title={
+                                  denominator
+                                    ? "Нажмите, чтобы посмотреть информацию"
+                                    : "Свободно"
+                                }
+                              >
+                                <span className="week-label">
+                                  Знаменатель
+                                </span>
+
+                                <span>
+                                  {denominator
+                                    ? "Занято"
+                                    : "Свободно"}
+                                </span>
+                              </button>
+
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
 
+        {/* МОДАЛЬНОЕ ОКНО */}
         {selectedLesson && (
           <div
             className="lesson-modal-overlay"
@@ -245,7 +271,8 @@ export default function RoomGrid({
               </h2>
 
               <p className="lesson-modal-teacher">
-                {selectedLesson.teacher || "Преподаватель не указан"}
+                {selectedLesson.teacher ||
+                  "Преподаватель не указан"}
               </p>
             </div>
           </div>
@@ -255,9 +282,17 @@ export default function RoomGrid({
   }
 
   return (
-    <div className={`room-grid ${view === "list" ? "list-view" : ""}`}>
+    <div
+      className={`room-grid ${
+        view === "list" ? "list-view" : ""
+      }`}
+    >
       {rooms.map((room) => (
-        <RoomCard key={room.id} room={room} period={period} />
+        <RoomCard
+          key={room.id}
+          room={room}
+          period={period}
+        />
       ))}
     </div>
   );

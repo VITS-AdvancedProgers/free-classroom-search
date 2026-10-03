@@ -77,37 +77,7 @@ export default function Home() {
     setViewLoaded(true);
   }, []);
 
-  // Сохраняем выбранный режим просмотра.
-  useEffect(() => {
-    if (viewLoaded) {
-      localStorage.setItem("rooms-view", view);
-    }
-  }, [view, viewLoaded]);
-
-  // Обновляем время каждую минуту.
-  useEffect(() => {
-    setClockReady(true);
-
-    const interval = setInterval(() => {
-      setNow(new Date());
-    }, 60000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // При смене даты выбираем текущую или ближайшую пару.
-  // Для другой даты по умолчанию выбирается первая пара.
-  useEffect(() => {
-    const currentDate = new Date();
-    const todayString = getDateString(currentDate);
-
-    if (date === todayString) {
-      setPeriod(getSelectedPeriod(currentDate));
-    } else {
-      setPeriod(0);
-    }
-  }, [date]);
-
+  
   const {
   apiRooms,
   schedule,
@@ -131,6 +101,30 @@ export default function Home() {
       })),
     [apiRooms, schedule]
   );
+  useEffect(() => {
+  if (isToday) {
+    setPeriod(getSelectedPeriod(now));
+  } else {
+    setPeriod(0);
+  }
+}, [date, now, isToday]);
+  // Сохраняем выбранный режим просмотра.
+  useEffect(() => {
+    if (viewLoaded) {
+      localStorage.setItem("rooms-view", view);
+    }
+  }, [view, viewLoaded]);
+
+  // Обновляем время каждую минуту.
+  useEffect(() => {
+    setClockReady(true);
+
+    const interval = setInterval(() => {
+      setNow(new Date());
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const floors = useMemo(() => {
     const values = rooms

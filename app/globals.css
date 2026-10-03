@@ -1968,3 +1968,161 @@ button {
     display: none;
   }
 }
+/* =========================================================
+   КОМПАКТНАЯ EXCEL-ПОДОБНАЯ НЕДЕЛЬНАЯ ТАБЛИЦА
+   ========================================================= */
+
+.weekly-room-table {
+  width: max-content;
+  min-width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+/* Заголовок с номерами аудиторий */
+.weekly-room-table thead th {
+  height: 42px;
+  padding: 6px 8px;
+  min-width: 130px;
+  width: 130px;
+  box-sizing: border-box;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+/* День */
+.weekly-room-table .weekly-day {
+  width: 100px;
+  min-width: 100px;
+}
+
+/* Пара */
+.weekly-room-table .weekly-period {
+  width: 95px;
+  min-width: 95px;
+}
+
+/* ВСЕ строки одинаковой высоты */
+.weekly-room-table tbody tr {
+  height: 82px;
+}
+
+/* ВСЕ ячейки одинакового размера */
+.weekly-room-table tbody td {
+  width: 130px;
+  min-width: 130px;
+  height: 82px;
+  padding: 4px;
+  box-sizing: border-box;
+  vertical-align: middle;
+}
+
+/* Контейнер двух половин */
+.weekly-room-table .weekly-cell {
+  display: grid;
+  grid-template-rows: 1fr 1px 1fr;
+  gap: 3px;
+  width: 100%;
+  height: 72px;
+  min-height: 72px;
+  box-sizing: border-box;
+}
+
+/* Числитель / знаменатель */
+.weekly-room-table .weekly-lesson {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  width: 100%;
+  height: 34px;
+  min-height: 34px;
+
+  padding: 3px 5px;
+  box-sizing: border-box;
+
+  border: none;
+  border-radius: 6px;
+
+  font-size: 11px;
+  line-height: 1.15;
+  text-align: center;
+
+  overflow: hidden;
+}
+
+/* Название "Числитель / Знаменатель" */
+.weekly-room-table .week-label {
+  display: block;
+  margin: 0 0 2px;
+
+  font-size: 9px;
+  line-height: 1;
+
+  white-space: nowrap;
+}
+
+/* Текст внутри */
+.weekly-room-table .weekly-lesson > span:last-child {
+  display: block;
+
+  font-size: 10px;
+  line-height: 1;
+
+  white-space: nowrap;
+}
+
+/* Свободно — зелёный */
+.weekly-room-table .weekly-lesson.available {
+  background: #e8f5ec;
+  color: #39734d;
+}
+
+/* Занято — красный */
+.weekly-room-table .weekly-lesson.occupied {
+  background: #f8dddd;
+  color: #a43737;
+  cursor: pointer;
+}
+
+/* Разделитель */
+.weekly-room-table .weekly-divider {
+  width: 100%;
+  height: 1px;
+  background: #dfe5e9;
+}
+
+/* Не даём содержимому увеличивать строки */
+.weekly-room-table td,
+.weekly-room-table th {
+  overflow: hidden;
+}
+
+/* Мобильная версия */
+@media (max-width: 650px) {
+  .weekly-room-table thead th {
+    min-width: 115px;
+    width: 115px;
+  }
+
+  .weekly-room-table tbody td {
+    min-width: 115px;
+    width: 115px;
+  }
+
+  .weekly-room-table tbody tr {
+    height: 78px;
+  }
+
+  .weekly-room-table .weekly-cell {
+    height: 68px;
+    min-height: 68px;
+  }
+
+  .weekly-room-table .weekly-lesson {
+    height: 32px;
+    min-height: 32px;
+    border-radius: 5px;
+  }
+}
