@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { Room } from "../data/rooms";
 import { periods } from "../data/rooms";
-import type { WeekLesson } from "../hooks/useRooms";
+import type { WeekLesson, WeekType } from "../hooks/useRooms";
 import RoomCard from "./RoomCard";
 import { X } from "lucide-react";
 
@@ -15,6 +15,7 @@ type RoomGridProps = {
   view: View;
   weeklySchedule?: Record<number, WeekLesson[]>;
   date?: string;
+  weekType?: WeekType;
 };
 
 type SelectedLesson = {
@@ -29,36 +30,28 @@ const weekdays = [
   "Четверг",
   "Пятница",
   "Суббота",
-  "Воскресенье",
 ];
 
+function getDateString(date: Date) {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
+}
+
 function getWeekDates(date: string) {
-  const selected = new Date(
-    `${date || new Date().toISOString().slice(0, 10)}T12:00:00`
-  );
-
+  const selected = new Date(`${date}T12:00:00`);
   const day = selected.getDay();
+  const mondayOffset = day === 0 ? -6 : 1 - day;
 
-  selected.setDate(
-    selected.getDate() + (day === 0 ? -6 : 1 - day)
-  );
+  selected.setDate(selected.getDate() + mondayOffset);
 
-  return weekdays.map((name, index) => {
+  return Array.from({ length: 6 }, (_, index) => {
     const current = new Date(selected);
-
     current.setDate(selected.getDate() + index);
 
-    return {
-      name,
-      date: [
-        current.getFullYear(),
-        String(current.getMonth() + 1).padStart(2, "0"),
-        String(current.getDate()).padStart(2, "0"),
-      ].join("-"),
-      shortDate: `${String(current.getDate()).padStart(2, "0")}.${String(
-        current.getMonth() + 1
-      ).padStart(2, "0")}`,
-    };
+    return getDateString(current);
   });
 }
 
@@ -68,6 +61,7 @@ export default function RoomGrid({
   view,
   weeklySchedule = {},
   date,
+  weekType = 0,
 }: RoomGridProps) {
   const [selectedLesson, setSelectedLesson] =
     useState<SelectedLesson>(null);
@@ -78,8 +72,7 @@ export default function RoomGrid({
     function getLesson(
       roomId: number,
       day: string,
-      lessonPeriod: number,
-      type: 1 | 2
+      lessonPeriod: number
     ) {
       const lessons = weeklySchedule[roomId] ?? [];
 
@@ -87,27 +80,29 @@ export default function RoomGrid({
         (lesson) =>
           lesson.date === day &&
           lesson.period === lessonPeriod &&
-          (lesson.typeWeekID === 0 ||
-            lesson.typeWeekID === type)
+          (weekType === 0
+            ? lesson.typeWeekID === 0
+            : lesson.typeWeekID === 0 ||
+              lesson.typeWeekID === weekType)
       );
     }
 
     return (
       <>
-        <div className="room-table-wrapper">
-          <table className="room-table weekly-room-table">
+        <div className="w-full max-h-[calc(100vh-280px)] overflow-auto rounded-xl border border-[#c9dce9] bg-white shadow-sm">
+          <table className="min-w-max w-full border-collapse text-left">
             <thead>
-              <tr>
-                <th className="room-table-period">
+              <tr className="border-b border-[#c9dce9] bg-[#f3f8fc]">
+                <th className="sticky left-0 top-0 z-40 min-w-[130px] border-r border-[#c9dce9] bg-[#f3f8fc] px-4 py-3 text-xs font-semibold text-[#234d70]">
                   День
                 </th>
 
-                <th className="weekly-period">
+                <th className="sticky left-[130px] top-0 z-40 min-w-[120px] border-r border-[#c9dce9] bg-[#f3f8fc] px-4 py-3 text-xs font-semibold text-[#234d70]">
                   Пара
                 </th>
 
                 {rooms.map((room) => (
-                  <th key={room.id}>
+                  <th key={room.id} className="sticky top-0 z-30 min-w-[150px] border-r border-[#dce8f0] bg-[#f3f8fc] px-3 py-3 text-center text-xs font-semibold text-[#234d70] last:border-r-0">
                     {room.number}
                   </th>
                 ))}
@@ -115,121 +110,83 @@ export default function RoomGrid({
             </thead>
 
             <tbody>
-              {days.map((day) =>
+              {days.map((day, dayIndex) =>
                 periods.map((item, periodIndex) => {
                   const lessonNumber = periodIndex + 1;
 
                   return (
-                    <tr
-                      key={`${day.date}-${item.name}`}
-                    >
+                    <tr key={`${day}-${lessonNumber}`} className="border-b border-[#dce8f0] last:border-b-0">
                       {periodIndex === 0 && (
-                        <th
-                          className="weekly-day"
-                          rowSpan={periods.length}
-                        >
-                          <span>{day.name}</span>
-                          <small>{day.shortDate}</small>
-                        </th>
+                        <td rowSpan={periods.length} className="sticky left-0 z-20 border-r border-[#c9dce9] bg-white px-4 py-3 align-top">
+                          <div className="flex flex-col gap-1">
+                            <span className="text-sm font-semibold text-[#234d70]">
+                              {weekdays[dayIndex]}
+                            </span>
+
+                            <span className="text-[11px] text-[#7890a5]">
+                              {new Date(`${day}T12:00:00`).toLocaleDateString("ru-RU", {
+                                day: "numeric",
+                                month: "long",
+                              })}
+                            </span>
+                          </div>
+                        </td>
                       )}
 
-                      <th className="weekly-period">
-                        <span>{item.name}</span>
-                        <small>{item.time}</small>
-                      </th>
+                      <td className="sticky left-[130px] z-20 border-r border-[#dce8f0] bg-white px-3 py-3">
+                        <div className="flex flex-col">
+                          <span className="text-xs font-semibold text-[#234d70]">
+                            {item.name}
+                          </span>
+
+                          <span className="mt-1 text-[10px] text-[#7890a5]">
+                            {item.time}
+                          </span>
+                        </div>
+                      </td>
 
                       {rooms.map((room) => {
-                        const numerator = getLesson(
+                        const lesson = getLesson(
                           room.id,
-                          day.date,
-                          lessonNumber,
-                          1
+                          day,
+                          lessonNumber
                         );
 
-                        const denominator = getLesson(
-                          room.id,
-                          day.date,
-                          lessonNumber,
-                          2
-                        );
+                        const isBusy = Boolean(lesson);
 
                         return (
-                          <td key={room.id}>
-                            <div className="weekly-cell">
-
-                              {/* ЧИСЛИТЕЛЬ */}
-                              <button
-                                type="button"
-                                className={`weekly-lesson ${
-                                  numerator
-                                    ? "occupied"
-                                    : "available"
-                                }`}
-                                onClick={() => {
-                                  if (!numerator) return;
-
-                                  setSelectedLesson({
-                                    subject: numerator.subject,
-                                    teacher: numerator.teacher,
-                                  });
-                                }}
-                                disabled={!numerator}
-                                title={
-                                  numerator
-                                    ? "Нажмите, чтобы посмотреть информацию"
-                                    : "Свободно"
+                          <td key={room.id} className="border-r border-[#dce8f0] p-0 last:border-r-0">
+                            <button
+                              type="button"
+                              disabled={!lesson}
+                              onClick={() => {
+                                if (!lesson) {
+                                  return;
                                 }
-                              >
-                                <span className="week-label">
-                                  Числитель
+
+                                setSelectedLesson({
+                                  subject: lesson.subject,
+                                  teacher: lesson.teacher,
+                                });
+                              }}
+                              className={`flex min-h-[78px] w-full flex-col items-center justify-center px-2 py-2 text-center transition ${isBusy ? "cursor-pointer bg-[#FFD6D6] text-[#D93636] hover:bg-[#FFC2C2]" : "cursor-default bg-[#D1F4DF] text-[#168A46] hover:bg-[#BDEECE]"}`}
+                            >
+                              {isBusy ? (
+                                <>
+                                  <span className="text-xs font-bold">
+                                    Занято
+                                  </span>
+
+                                  <span className="mt-1 max-w-[130px] truncate text-[10px] font-medium opacity-90">
+                                    {lesson?.subject}
+                                  </span>
+                                </>
+                              ) : (
+                                <span className="text-xs font-bold">
+                                  Свободно
                                 </span>
-
-                                <span>
-                                  {numerator
-                                    ? "Занято"
-                                    : "Свободно"}
-                                </span>
-                              </button>
-
-                              <div className="weekly-divider" />
-
-                              {/* ЗНАМЕНАТЕЛЬ */}
-                              <button
-                                type="button"
-                                className={`weekly-lesson ${
-                                  denominator
-                                    ? "occupied"
-                                    : "available"
-                                }`}
-                                onClick={() => {
-                                  if (!denominator) return;
-
-                                  setSelectedLesson({
-                                    subject:
-                                      denominator.subject,
-                                    teacher:
-                                      denominator.teacher,
-                                  });
-                                }}
-                                disabled={!denominator}
-                                title={
-                                  denominator
-                                    ? "Нажмите, чтобы посмотреть информацию"
-                                    : "Свободно"
-                                }
-                              >
-                                <span className="week-label">
-                                  Знаменатель
-                                </span>
-
-                                <span>
-                                  {denominator
-                                    ? "Занято"
-                                    : "Свободно"}
-                                </span>
-                              </button>
-
-                            </div>
+                              )}
+                            </button>
                           </td>
                         );
                       })}
@@ -241,39 +198,50 @@ export default function RoomGrid({
           </table>
         </div>
 
-        {/* МОДАЛЬНОЕ ОКНО */}
         {selectedLesson && (
-          <div
-            className="lesson-modal-overlay"
-            onMouseDown={(event) => {
-              if (event.target === event.currentTarget) {
-                setSelectedLesson(null);
-              }
-            }}
-          >
-            <div
-              className="lesson-modal"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="lesson-modal-title"
-            >
-              <button
-                type="button"
-                className="lesson-modal-close"
-                onClick={() => setSelectedLesson(null)}
-                aria-label="Закрыть"
-              >
-                <X size={20} />
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 px-4">
+            <div className="w-full max-w-md rounded-2xl border border-[#dce8f0] bg-white p-5 shadow-2xl">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-base font-semibold text-[#234d70]">
+                    Занятие
+                  </h3>
+
+                  <p className="mt-1 text-xs text-[#7890a5]">
+                    Информация о занятии
+                  </p>
+                </div>
+
+                <button type="button" onClick={() => setSelectedLesson(null)} className="flex h-8 w-8 items-center justify-center rounded-lg text-[#7890a5] transition hover:bg-[#edf4f8] hover:text-[#234d70]">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="mt-5 space-y-4">
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-wide text-[#7890a5]">
+                    Дисциплина
+                  </div>
+
+                  <div className="mt-1 text-sm font-medium text-[#234d70]">
+                    {selectedLesson.subject}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-wide text-[#7890a5]">
+                    Преподаватель
+                  </div>
+
+                  <div className="mt-1 text-sm font-medium text-[#234d70]">
+                    {selectedLesson.teacher}
+                  </div>
+                </div>
+              </div>
+
+              <button type="button" onClick={() => setSelectedLesson(null)} className="mt-6 w-full rounded-lg bg-[#e3f2ff] py-2.5 text-xs font-semibold text-[#1674bb] transition hover:bg-[#d5ebff]">
+                Закрыть
               </button>
-
-              <h2 id="lesson-modal-title">
-                {selectedLesson.subject || "Занятие"}
-              </h2>
-
-              <p className="lesson-modal-teacher">
-                {selectedLesson.teacher ||
-                  "Преподаватель не указан"}
-              </p>
             </div>
           </div>
         )}
@@ -282,11 +250,7 @@ export default function RoomGrid({
   }
 
   return (
-    <div
-      className={`room-grid ${
-        view === "list" ? "list-view" : ""
-      }`}
-    >
+    <div className={view === "grid" ? "grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3" : "flex flex-col gap-3"}>
       {rooms.map((room) => (
         <RoomCard
           key={room.id}
