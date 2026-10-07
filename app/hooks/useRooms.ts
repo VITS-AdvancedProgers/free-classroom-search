@@ -58,7 +58,9 @@ type CacheEntry<T> = {
 };
 
 const ROOMS_CACHE_KEY = "rooms-cache";
-const SCHEDULE_CACHE_KEY = "schedule-cache-v3";
+
+// Версия кэша увеличена, чтобы старый номер недели больше не использовался.
+const SCHEDULE_CACHE_KEY = "schedule-cache-v4";
 
 const ROOMS_CACHE_TIME = 30 * 60 * 1000;
 const SCHEDULE_CACHE_TIME = 5 * 60 * 1000;
@@ -84,26 +86,16 @@ function readCache<T>(key: string): T | null {
   }
 }
 
-function writeCache<T>(
-  key: string,
-  data: T,
-  duration: number
-) {
+function writeCache<T>(key: string, data: T, duration: number) {
   try {
     const entry: CacheEntry<T> = {
       data,
       expiresAt: Date.now() + duration,
     };
 
-    localStorage.setItem(
-      key,
-      JSON.stringify(entry)
-    );
+    localStorage.setItem(key, JSON.stringify(entry));
   } catch (error) {
-    console.error(
-      "Не удалось сохранить кэш:",
-      error
-    );
+    console.error("Не удалось сохранить кэш:", error);
   }
 }
 
@@ -119,30 +111,20 @@ function getWeekDates(date: string): string[] {
   const selected = new Date(`${date}T12:00:00`);
   const day = selected.getDay();
 
-  const mondayOffset =
-    day === 0 ? -6 : 1 - day;
+  const mondayOffset = day === 0 ? -6 : 1 - day;
 
-  selected.setDate(
-    selected.getDate() + mondayOffset
-  );
+  selected.setDate(selected.getDate() + mondayOffset);
 
-  return Array.from(
-    { length: 7 },
-    (_, index) => {
-      const current = new Date(selected);
+  return Array.from({ length: 7 }, (_, index) => {
+    const current = new Date(selected);
 
-      current.setDate(
-        selected.getDate() + index
-      );
+    current.setDate(selected.getDate() + index);
 
-      return getDateString(current);
-    }
-  );
+    return getDateString(current);
+  });
 }
 
-function normalizeWeekType(
-  value: number | undefined
-): WeekType {
+function normalizeWeekType(value: number | undefined): WeekType {
   if (value === 1) {
     return 1;
   }
@@ -154,34 +136,74 @@ function normalizeWeekType(
   return 0;
 }
 
+/**
+ * Рассчитывает номер выбранной недели.
+ *
+ * API отдаёт curWeekNumber как номер ТЕКУЩЕЙ недели,
+ * а info.date — начало недели, которую мы запросили.
+ *
+ * Поэтому:
+ * выбранная неделя = текущая неделя + разница недель
+ */
+function getSelectedWeekNumber(
+  selectedWeekStart: string | undefined,
+  currentWeekNumber: number | undefined
+): number | null {
+  if (!selectedWeekStart || currentWeekNumber == null) {
+    return null;
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const todayDay = today.getDay();
+
+  const currentMonday = new Date(today);
+
+  currentMonday.setDate(
+    currentMonday.getDate() - (todayDay === 0 ? 6 : todayDay - 1)
+  );
+
+  currentMonday.setHours(0, 0, 0, 0);
+
+  const selectedMonday = new Date(`${selectedWeekStart.slice(0, 10)}T00:00:00`);
+
+  if (Number.isNaN(selectedMonday.getTime())) {
+    return currentWeekNumber;
+  }
+
+  const millisecondsPerWeek = 7 * 24 * 60 * 60 * 1000;
+
+  const differenceInWeeks = Math.round(
+    (selectedMonday.getTime() - currentMonday.getTime()) /
+      millisecondsPerWeek
+  );
+
+  const selectedWeekNumber = currentWeekNumber + differenceInWeeks;
+
+  return selectedWeekNumber > 0 ? selectedWeekNumber : currentWeekNumber;
+}
+
 export function useRooms(date: string) {
-  const [apiRooms, setApiRooms] =
-    useState<ApiRoom[]>([]);
+  const [apiRooms, setApiRooms] = useState<ApiRoom[]>([]);
 
-  const [schedule, setSchedule] =
-    useState<
-      Record<number, Room["lessons"]>
-    >({});
+  const [schedule, setSchedule] = useState<
+    Record<number, Room["lessons"]>
+  >({});
 
-  const [weeklySchedule, setWeeklySchedule] =
-    useState<
-      Record<number, WeekLesson[]>
-    >({});
+  const [weeklySchedule, setWeeklySchedule] = useState<
+    Record<number, WeekLesson[]>
+  >({});
 
-  const [weekType, setWeekType] =
-    useState<WeekType>(0);
+  const [weekType, setWeekType] = useState<WeekType>(0);
 
-  const [weekNumber, setWeekNumber] =
-    useState<number | null>(null);
+  const [weekNumber, setWeekNumber] = useState<number | null>(null);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [loading, setLoading] = useState(true);
 
-  const [scheduleLoading, setScheduleLoading] =
-    useState(false);
+  const [scheduleLoading, setScheduleLoading] = useState(false);
 
-  const [error, setError] =
-    useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -190,10 +212,7 @@ export function useRooms(date: string) {
       setLoading(true);
       setError("");
 
-      const cachedRooms =
-        readCache<ApiRoom[]>(
-          ROOMS_CACHE_KEY
-        );
+      const cachedRooms = readCache<ApiRoom[]>(ROOMS_CACHE_KEY);
 
       if (cachedRooms) {
         if (!cancelled) {
@@ -205,23 +224,15 @@ export function useRooms(date: string) {
       }
 
       try {
-        const response =
-          await fetch("/api/rooms");
+        const response = await fetch("/api/rooms");
 
         if (!response.ok) {
-          throw new Error(
-            "Не удалось загрузить аудитории"
-          );
+          throw new Error("Не удалось загрузить аудитории");
         }
 
-        const data: ApiRoom[] =
-          await response.json();
+        const data: ApiRoom[] = await response.json();
 
-        writeCache(
-          ROOMS_CACHE_KEY,
-          data,
-          ROOMS_CACHE_TIME
-        );
+        writeCache(ROOMS_CACHE_KEY, data, ROOMS_CACHE_TIME);
 
         if (!cancelled) {
           setApiRooms(data);
@@ -229,9 +240,7 @@ export function useRooms(date: string) {
       } catch (err) {
         if (!cancelled) {
           setError(
-            err instanceof Error
-              ? err.message
-              : "Произошла ошибка"
+            err instanceof Error ? err.message : "Произошла ошибка"
           );
         }
       } finally {
@@ -259,31 +268,20 @@ export function useRooms(date: string) {
       setError("");
 
       const cachedSchedules =
-        readCache<
-          Record<string, ScheduleCache>
-        >(SCHEDULE_CACHE_KEY) ?? {};
+        readCache<Record<string, ScheduleCache>>(SCHEDULE_CACHE_KEY) ?? {};
 
-      const cached =
-        cachedSchedules[date];
+      const cached = cachedSchedules[date];
 
       if (
         cached &&
-        Object.keys(cached.daily).length ===
-          apiRooms.length &&
-        Object.keys(cached.weekly).length ===
-          apiRooms.length
+        Object.keys(cached.daily).length === apiRooms.length &&
+        Object.keys(cached.weekly).length === apiRooms.length
       ) {
         if (!cancelled) {
           setSchedule(cached.daily);
-          setWeeklySchedule(
-            cached.weekly
-          );
-          setWeekType(
-            cached.weekType ?? 0
-          );
-          setWeekNumber(
-            cached.weekNumber ?? null
-          );
+          setWeeklySchedule(cached.weekly);
+          setWeekType(cached.weekType ?? 0);
+          setWeekNumber(cached.weekNumber ?? null);
           setScheduleLoading(false);
         }
 
@@ -297,161 +295,113 @@ export function useRooms(date: string) {
       setScheduleLoading(true);
 
       try {
-        const weekDates =
-          getWeekDates(date);
+        const weekDates = getWeekDates(date);
 
-        const results =
-          await Promise.all(
-            apiRooms.map(
-              async (room) => {
-                const params =
-                  new URLSearchParams({
-                    roomId: String(
-                      room.id
-                    ),
-                    date,
-                  });
+        const results = await Promise.all(
+          apiRooms.map(async (room) => {
+            const params = new URLSearchParams({
+              roomId: String(room.id),
+              date,
+            });
 
-                const response =
-                  await fetch(
-                    `/api/schedule?${params.toString()}`
-                  );
+            const response = await fetch(
+              `/api/schedule?${params.toString()}`
+            );
 
-                if (!response.ok) {
-                  throw new Error(
-                    `Не удалось загрузить расписание ${room.name}`
-                  );
-                }
+            if (!response.ok) {
+              throw new Error(
+                `Не удалось загрузить расписание ${room.name}`
+              );
+            }
 
-                const result: ApiSchedule =
-                  await response.json();
+            const result: ApiSchedule = await response.json();
 
-                const dailyLessons:
-                  Room["lessons"] =
-                  Array(6).fill(null);
+            const dailyLessons: Room["lessons"] = Array(6).fill(null);
 
-                const weeklyLessons:
-                  WeekLesson[] = [];
+            const weeklyLessons: WeekLesson[] = [];
 
-                for (const lesson of
-                  result.data.rasp ?? []) {
-                  const lessonDate =
-                    lesson.дата.slice(
-                      0,
-                      10
-                    );
+            for (const lesson of result.data.rasp ?? []) {
+              const lessonDate = lesson.дата.slice(0, 10);
 
-                  const period =
-                    lesson.номерЗанятия;
+              const period = lesson.номерЗанятия;
 
-                  if (
-                    !weekDates.includes(
-                      lessonDate
-                    ) ||
-                    period < 1 ||
-                    period > 6
-                  ) {
-                    continue;
-                  }
+              if (
+                !weekDates.includes(lessonDate) ||
+                period < 1 ||
+                period > 6
+              ) {
+                continue;
+              }
 
-                  const typeWeekID =
-                    lesson.typeWeekID ?? 0;
+              const typeWeekID = lesson.typeWeekID ?? 0;
 
-                  weeklyLessons.push({
-                    date: lessonDate,
-                    period,
-                    typeWeekID,
-                    subject:
-                      lesson.дисциплина,
-                    teacher:
-                      lesson.преподаватель,
-                  });
+              weeklyLessons.push({
+                date: lessonDate,
+                period,
+                typeWeekID,
+                subject: lesson.дисциплина,
+                teacher: lesson.преподаватель,
+              });
 
-                  if (
-                    lessonDate === date
-                  ) {
-                    dailyLessons[
-                      period - 1
-                    ] = {
-                      subject:
-                        lesson.дисциплина,
-                      teacher:
-                        lesson.преподаватель,
-                    };
-                  }
-                }
-
-                const selectedNumNed =
-                  result.data.info
-                    ?.selectedNumNed;
-
-                const currentWeekNumber =
-                  result.data.info
-                    ?.curWeekNumber;
-
-                return {
-                  id: room.id,
-                  daily: dailyLessons,
-                  weekly: weeklyLessons,
-                  weekType:
-                    normalizeWeekType(
-                      selectedNumNed
-                    ),
-                  weekNumber:
-                    currentWeekNumber,
+              if (lessonDate === date) {
+                dailyLessons[period - 1] = {
+                  subject: lesson.дисциплина,
+                  teacher: lesson.преподаватель,
                 };
               }
-            )
-          );
+            }
 
-        const newSchedule =
-          Object.fromEntries(
-            results.map(
-              (result) => [
-                result.id,
-                result.daily,
-              ]
-            )
-          );
+            const info = result.data.info;
 
-        const newWeeklySchedule =
-          Object.fromEntries(
-            results.map(
-              (result) => [
-                result.id,
-                result.weekly,
-              ]
-            )
-          );
+            const selectedNumNed = info?.selectedNumNed;
 
-        const firstValidWeek =
-          results.find(
-            (result) =>
-              result.weekType === 1 ||
-              result.weekType === 2
-          );
+            const currentWeekNumber = info?.curWeekNumber;
+
+            const selectedWeekNumber = getSelectedWeekNumber(
+              info?.date,
+              currentWeekNumber
+            );
+
+            return {
+              id: room.id,
+              daily: dailyLessons,
+              weekly: weeklyLessons,
+              weekType: normalizeWeekType(selectedNumNed),
+              weekNumber: selectedWeekNumber,
+            };
+          })
+        );
+
+        const newSchedule = Object.fromEntries(
+          results.map((result) => [result.id, result.daily])
+        );
+
+        const newWeeklySchedule = Object.fromEntries(
+          results.map((result) => [result.id, result.weekly])
+        );
+
+        const firstValidWeek = results.find(
+          (result) =>
+            result.weekType === 1 ||
+            result.weekType === 2
+        );
 
         const detectedWeekType: WeekType =
           firstValidWeek?.weekType ?? 0;
 
         const detectedWeekNumber =
-          firstValidWeek?.weekNumber ??
-          null;
+          firstValidWeek?.weekNumber ?? null;
 
         const currentCache =
-          readCache<
-            Record<string, ScheduleCache>
-          >(SCHEDULE_CACHE_KEY) ?? {};
+          readCache<Record<string, ScheduleCache>>(
+            SCHEDULE_CACHE_KEY
+          ) ?? {};
 
         currentCache[date] = {
           daily: newSchedule,
-          weekly:
-            newWeeklySchedule,
-          weekType:
-            detectedWeekType,
-          weekNumber:
-            detectedWeekNumber ??
-            undefined,
+          weekly: newWeeklySchedule,
+          weekType: detectedWeekType,
+          weekNumber: detectedWeekNumber ?? undefined,
         };
 
         writeCache(
@@ -462,15 +412,9 @@ export function useRooms(date: string) {
 
         if (!cancelled) {
           setSchedule(newSchedule);
-          setWeeklySchedule(
-            newWeeklySchedule
-          );
-          setWeekType(
-            detectedWeekType
-          );
-          setWeekNumber(
-            detectedWeekNumber
-          );
+          setWeeklySchedule(newWeeklySchedule);
+          setWeekType(detectedWeekType);
+          setWeekNumber(detectedWeekNumber);
         }
       } catch (err) {
         if (!cancelled) {

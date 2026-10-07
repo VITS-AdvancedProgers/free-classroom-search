@@ -1,11 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import type { Room } from "../data/rooms";
-import { periods } from "../data/rooms";
+import { useMemo, useState } from "react";
+import { periods, type Room } from "../data/rooms";
 import type { WeekLesson, WeekType } from "../hooks/useRooms";
-import RoomCard from "./RoomCard";
-import { X } from "lucide-react";
 
 type View = "grid" | "list" | "table";
 
@@ -18,29 +15,7 @@ type RoomGridProps = {
   weekType?: WeekType;
 };
 
-type SelectedLesson = {
-  subject: string;
-  teacher: string;
-} | null;
-
-const weekdays = [
-  "Понедельник",
-  "Вторник",
-  "Среда",
-  "Четверг",
-  "Пятница",
-  "Суббота",
-];
-
-function getDateString(date: Date) {
-  return [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, "0"),
-    String(date.getDate()).padStart(2, "0"),
-  ].join("-");
-}
-
-function getWeekDates(date: string) {
+function getWeekDates(date: string): string[] {
   const selected = new Date(`${date}T12:00:00`);
   const day = selected.getDay();
   const mondayOffset = day === 0 ? -6 : 1 - day;
@@ -51,8 +26,48 @@ function getWeekDates(date: string) {
     const current = new Date(selected);
     current.setDate(selected.getDate() + index);
 
-    return getDateString(current);
+    return [
+      current.getFullYear(),
+      String(current.getMonth() + 1).padStart(2, "0"),
+      String(current.getDate()).padStart(2, "0"),
+    ].join("-");
   });
+}
+
+function formatDayName(date: string): string {
+  return new Date(`${date}T12:00:00`).toLocaleDateString("ru-RU", {
+    weekday: "long",
+  });
+}
+
+function formatDayDate(date: string): string {
+  return new Date(`${date}T12:00:00`).toLocaleDateString("ru-RU", {
+    day: "numeric",
+    month: "long",
+  });
+}
+
+function getLesson(
+  lessons: WeekLesson[] | undefined,
+  date: string,
+  period: number,
+  weekType: WeekType
+): WeekLesson | null {
+  if (!lessons) {
+    return null;
+  }
+
+  const matches = lessons.filter((lesson) => {
+    const lessonDate = lesson.date.slice(0, 10);
+    const correctDate = lessonDate === date;
+    const correctPeriod = lesson.period === period;
+    const correctWeek =
+      lesson.typeWeekID === 0 || lesson.typeWeekID === weekType;
+
+    return correctDate && correctPeriod && correctWeek;
+  });
+
+  return matches[0] ?? null;
 }
 
 export default function RoomGrid({
@@ -60,49 +75,48 @@ export default function RoomGrid({
   period,
   view,
   weeklySchedule = {},
-  date,
+  date = "",
   weekType = 0,
 }: RoomGridProps) {
-  const [selectedLesson, setSelectedLesson] =
-    useState<SelectedLesson>(null);
+  const [selectedLesson, setSelectedLesson] = useState<WeekLesson | null>(
+    null
+  );
 
-  if (view === "table") {
-    const days = getWeekDates(date ?? "");
+  const weekDates = useMemo(
+    () => (date ? getWeekDates(date) : []),
+    [date]
+  );
 
-    function getLesson(
-      roomId: number,
-      day: string,
-      lessonPeriod: number
-    ) {
-      const lessons = weeklySchedule[roomId] ?? [];
+  const sortedRooms = useMemo(
+    () =>
+      [...rooms].sort((a, b) =>
+        a.number.localeCompare(b.number, "ru", {
+          numeric: true,
+        })
+      ),
+    [rooms]
+  );
 
-      return lessons.find(
-        (lesson) =>
-          lesson.date === day &&
-          lesson.period === lessonPeriod &&
-          (weekType === 0
-            ? lesson.typeWeekID === 0
-            : lesson.typeWeekID === 0 ||
-              lesson.typeWeekID === weekType)
-      );
-    }
-
+  if (view === "table" && date) {
     return (
       <>
-        <div className="w-full max-h-[calc(100vh-280px)] overflow-auto rounded-xl border border-[#c9dce9] bg-white shadow-sm">
-          <table className="min-w-max w-full border-collapse text-left">
+        <div className="w-full max-h-[calc(100vh-280px)] overflow-auto rounded-xl border border-[#dce8f1] bg-white shadow-[0_5px_18px_rgba(31,73,104,0.045)]">
+          <table className="w-max min-w-full border-collapse border-spacing-0 text-left">
             <thead>
-              <tr className="border-b border-[#c9dce9] bg-[#f3f8fc]">
-                <th className="sticky left-0 top-0 z-40 min-w-[130px] border-r border-[#c9dce9] bg-[#f3f8fc] px-4 py-3 text-xs font-semibold text-[#234d70]">
+              <tr>
+                <th className="sticky left-0 top-0 z-30 h-10 w-[96px] min-w-[96px] max-w-[96px] border-b border-r border-[#dce8f1] bg-[#f5f9fc] px-2 text-center text-[10px] font-semibold text-[#315773]">
                   День
                 </th>
 
-                <th className="sticky left-[130px] top-0 z-40 min-w-[120px] border-r border-[#c9dce9] bg-[#f3f8fc] px-4 py-3 text-xs font-semibold text-[#234d70]">
+                <th className="sticky left-[96px] top-0 z-30 h-10 w-[68px] min-w-[68px] max-w-[68px] border-b border-r border-[#dce8f1] bg-[#f5f9fc] px-1 text-center text-[10px] font-semibold text-[#315773]">
                   Пара
                 </th>
 
-                {rooms.map((room) => (
-                  <th key={room.id} className="sticky top-0 z-30 min-w-[150px] border-r border-[#dce8f0] bg-[#f3f8fc] px-3 py-3 text-center text-xs font-semibold text-[#234d70] last:border-r-0">
+                {sortedRooms.map((room) => (
+                  <th
+                    key={room.id}
+                    className="sticky top-0 z-20 h-10 w-[155px] min-w-[155px] max-w-[155px] border-b border-r border-[#dce8f1] bg-[#f5f9fc] px-2 text-center text-[10px] font-semibold text-[#315773] last:border-r-0"
+                  >
                     {room.number}
                   </th>
                 ))}
@@ -110,80 +124,71 @@ export default function RoomGrid({
             </thead>
 
             <tbody>
-              {days.map((day, dayIndex) =>
-                periods.map((item, periodIndex) => {
-                  const lessonNumber = periodIndex + 1;
+              {weekDates.map((weekDate, dayIndex) => {
+                const dayName = formatDayName(weekDate);
+                const dayDate = formatDayDate(weekDate);
+
+                return periods.map((item, periodIndex) => {
+                  const lessonPeriod = periodIndex + 1;
 
                   return (
-                    <tr key={`${day}-${lessonNumber}`} className="border-b border-[#dce8f0] last:border-b-0">
+                    <tr key={`${weekDate}-${item.name}`} className="h-[72px]">
                       {periodIndex === 0 && (
-                        <td rowSpan={periods.length} className="sticky left-0 z-20 border-r border-[#c9dce9] bg-white px-4 py-3 align-top">
-                          <div className="flex flex-col gap-1">
-                            <span className="text-sm font-semibold text-[#234d70]">
-                              {weekdays[dayIndex]}
+                        <th
+                          rowSpan={periods.length}
+                          className="sticky left-0 z-20 w-[96px] min-w-[96px] max-w-[96px] border-b border-r border-[#dce8f1] bg-[#fbfcfd] px-2 align-middle text-center"
+                        >
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="[writing-mode:vertical-rl] rotate-180 text-[15px] font-bold capitalize leading-none text-[#365c75]">
+                              {dayName}
                             </span>
 
-                            <span className="text-[11px] text-[#7890a5]">
-                              {new Date(`${day}T12:00:00`).toLocaleDateString("ru-RU", {
-                                day: "numeric",
-                                month: "long",
-                              })}
+                            <span className="[writing-mode:vertical-rl] rotate-180 text-[12px] font-semibold leading-none text-[#71899b]">
+                              {dayDate}
                             </span>
                           </div>
-                        </td>
+                        </th>
                       )}
 
-                      <td className="sticky left-[130px] z-20 border-r border-[#dce8f0] bg-white px-3 py-3">
-                        <div className="flex flex-col">
-                          <span className="text-xs font-semibold text-[#234d70]">
-                            {item.name}
-                          </span>
+                      <th className="sticky left-[96px] z-20 w-[68px] min-w-[68px] max-w-[68px] border-b border-r border-[#dce8f1] bg-[#f8fafc] px-1 align-middle text-center">
+                        <span className="block text-[9px] font-semibold leading-[1.15] text-[#315773]">
+                          {item.name}
+                        </span>
 
-                          <span className="mt-1 text-[10px] text-[#7890a5]">
-                            {item.time}
-                          </span>
-                        </div>
-                      </td>
+                        <span className="mt-1 block whitespace-nowrap text-[6px] font-normal leading-[1.1] text-[#8aa0b2]">
+                          {item.time}
+                        </span>
+                      </th>
 
-                      {rooms.map((room) => {
+                      {sortedRooms.map((room) => {
                         const lesson = getLesson(
-                          room.id,
-                          day,
-                          lessonNumber
+                          weeklySchedule[room.id],
+                          weekDate,
+                          lessonPeriod,
+                          weekType
                         );
 
-                        const isBusy = Boolean(lesson);
-
                         return (
-                          <td key={room.id} className="border-r border-[#dce8f0] p-0 last:border-r-0">
+                          <td
+                            key={`${room.id}-${weekDate}-${lessonPeriod}`}
+                            className="h-[72px] w-[155px] min-w-[155px] max-w-[155px] border-b border-r border-[#dce8f1] p-0 align-middle last:border-r-0"
+                          >
                             <button
                               type="button"
-                              disabled={!lesson}
+                              className={`flex h-full min-h-[72px] w-full flex-col items-center justify-center gap-1 overflow-hidden px-2 text-center transition ${lesson ? "bg-[#FFD6D6] text-[#D93636] hover:bg-[#FFC2C2]" : "bg-[#D1F4DF] text-[#168A46] hover:bg-[#BDEECE]"}`}
                               onClick={() => {
-                                if (!lesson) {
-                                  return;
+                                if (lesson) {
+                                  setSelectedLesson(lesson);
                                 }
-
-                                setSelectedLesson({
-                                  subject: lesson.subject,
-                                  teacher: lesson.teacher,
-                                });
                               }}
-                              className={`flex min-h-[78px] w-full flex-col items-center justify-center px-2 py-2 text-center transition ${isBusy ? "cursor-pointer bg-[#FFD6D6] text-[#D93636] hover:bg-[#FFC2C2]" : "cursor-default bg-[#D1F4DF] text-[#168A46] hover:bg-[#BDEECE]"}`}
                             >
-                              {isBusy ? (
-                                <>
-                                  <span className="text-xs font-bold">
-                                    Занято
-                                  </span>
-
-                                  <span className="mt-1 max-w-[130px] truncate text-[10px] font-medium opacity-90">
-                                    {lesson?.subject}
-                                  </span>
-                                </>
+                              {lesson ? (
+                                <span className="text-[9px] font-semibold">
+                                  Занята
+                                </span>
                               ) : (
-                                <span className="text-xs font-bold">
-                                  Свободно
+                                <span className="text-[9px] font-semibold">
+                                  Свободна
                                 </span>
                               )}
                             </button>
@@ -192,56 +197,41 @@ export default function RoomGrid({
                       })}
                     </tr>
                   );
-                })
-              )}
+                });
+              })}
             </tbody>
           </table>
         </div>
 
         {selectedLesson && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 px-4">
-            <div className="w-full max-w-md rounded-2xl border border-[#dce8f0] bg-white p-5 shadow-2xl">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h3 className="text-base font-semibold text-[#234d70]">
-                    Занятие
-                  </h3>
-
-                  <p className="mt-1 text-xs text-[#7890a5]">
-                    Информация о занятии
-                  </p>
-                </div>
-
-                <button type="button" onClick={() => setSelectedLesson(null)} className="flex h-8 w-8 items-center justify-center rounded-lg text-[#7890a5] transition hover:bg-[#edf4f8] hover:text-[#234d70]">
-                  <X size={18} />
-                </button>
-              </div>
-
-              <div className="mt-5 space-y-4">
-                <div>
-                  <div className="text-[10px] font-semibold uppercase tracking-wide text-[#7890a5]">
-                    Дисциплина
-                  </div>
-
-                  <div className="mt-1 text-sm font-medium text-[#234d70]">
-                    {selectedLesson.subject}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-[10px] font-semibold uppercase tracking-wide text-[#7890a5]">
-                    Преподаватель
-                  </div>
-
-                  <div className="mt-1 text-sm font-medium text-[#234d70]">
-                    {selectedLesson.teacher}
-                  </div>
-                </div>
-              </div>
-
-              <button type="button" onClick={() => setSelectedLesson(null)} className="mt-6 w-full rounded-lg bg-[#e3f2ff] py-2.5 text-xs font-semibold text-[#1674bb] transition hover:bg-[#d5ebff]">
-                Закрыть
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-[rgba(18,52,81,0.35)] p-5 backdrop-blur-[4px]"
+            onClick={() => setSelectedLesson(null)}
+          >
+            <div
+              className="relative w-full max-w-[440px] rounded-[18px] border border-[#dce8f1] bg-white p-7 shadow-[0_25px_70px_rgba(18,52,81,0.2)]"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <button
+                type="button"
+                className="absolute right-3 top-3 flex h-[30px] w-[30px] items-center justify-center rounded-lg bg-[#f1f6fa] text-[20px] text-[#71889a] transition hover:bg-[#e5eef5]"
+                onClick={() => setSelectedLesson(null)}
+                aria-label="Закрыть"
+              >
+                ×
               </button>
+
+              <h2 className="mb-3 pr-8 text-[20px] font-semibold leading-[1.35] text-[#183d5d]">
+                {selectedLesson.subject}
+              </h2>
+
+              <p className="mb-4 text-[14px] text-[#647d91]">
+                {selectedLesson.teacher}
+              </p>
+
+              <div className="inline-flex rounded-full bg-[#e8f3eb] px-3 py-1.5 text-[12px] text-[#245b39]">
+                {selectedLesson.period} пара
+              </div>
             </div>
           </div>
         )}
@@ -250,14 +240,61 @@ export default function RoomGrid({
   }
 
   return (
-    <div className={view === "grid" ? "grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3" : "flex flex-col gap-3"}>
-      {rooms.map((room) => (
+    <section
+      className={`grid gap-3 ${view === "list" ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"}`}
+      aria-live="polite"
+    >
+      {sortedRooms.map((room) => (
         <RoomCard
           key={room.id}
           room={room}
           period={period}
+          view={view}
         />
       ))}
-    </div>
+    </section>
+  );
+}
+
+function RoomCard({
+  room,
+  period,
+  view,
+}: {
+  room: Room;
+  period: number;
+  view: View;
+}) {
+  const lesson = room.lessons[period - 1];
+
+  return (
+    <article className={`relative overflow-hidden rounded-2xl border bg-white transition ${lesson ? "border-[#f0d6d6]" : "border-[#dce8f1]"} ${view === "list" ? "flex min-h-[84px] items-center gap-5 px-5 py-4" : "min-h-[150px] p-5"}`}>
+      <div className={view === "list" ? "min-w-[90px]" : ""}>
+        <h3 className="text-[16px] font-semibold text-[#12395e]">
+          {room.number}
+        </h3>
+
+        <span className={`mt-1 inline-flex items-center gap-1.5 text-[11px] font-medium ${lesson ? "text-[#D93636]" : "text-[#168A46]"}`}>
+          <span className={`h-1.5 w-1.5 rounded-full ${lesson ? "bg-[#D93636]" : "bg-[#168A46]"}`} />
+          {lesson ? "Занята" : "Свободна"}
+        </span>
+      </div>
+
+      {lesson ? (
+        <div className={view === "list" ? "min-w-0 flex-1" : "mt-5"}>
+          <strong className="block overflow-hidden text-ellipsis whitespace-nowrap text-[13px] font-medium text-[#315773]">
+            {lesson.subject}
+          </strong>
+
+          <span className="mt-1 block overflow-hidden text-ellipsis whitespace-nowrap text-[11px] text-[#7893aa]">
+            {lesson.teacher}
+          </span>
+        </div>
+      ) : (
+        <p className={view === "list" ? "ml-auto text-[11px] text-[#8aa0b2]" : "mt-6 text-[11px] text-[#8aa0b2]"}>
+          Можно использовать
+        </p>
+      )}
+    </article>
   );
 }

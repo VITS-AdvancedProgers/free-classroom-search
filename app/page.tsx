@@ -1,11 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+
 import { periods } from "./data/rooms";
+
 import { useRooms } from "./hooks/useRooms";
+
 import DateSelector from "./components/DateSelector";
+
 import RoomFilters from "./components/RoomFilters";
+
 import RoomGrid from "./components/RoomGrid";
+
 import { Grid2X2, List, Table } from "lucide-react";
 
 type View = "grid" | "list" | "table";
@@ -60,6 +66,14 @@ export default function Home() {
 
   useEffect(() => {
     const savedView = localStorage.getItem("rooms-view");
+
+    const isMobile = window.innerWidth < 1024;
+
+    if (isMobile) {
+      setView(savedView === "table" ? "table" : "list");
+      setViewLoaded(true);
+      return;
+    }
 
     if (
       savedView === "grid" ||
@@ -176,35 +190,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#f6f9fc] text-[#12395e]">
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-[168px] flex-col overflow-hidden border-r border-[#d4e8fa] bg-[#e3f2ff] md:flex">
-        <div className="flex flex-col items-center gap-3 px-3 pb-6 pt-7 text-center">
-          <img src="/images/logo.png" alt="Логотип Б корпуса" className="h-[38px] w-[38px] shrink-0 object-contain" />
-
-          <div className="flex flex-col items-center gap-1 leading-[1.3]">
-            <strong className="text-[20px] font-bold tracking-[-0.5px] text-[#12395e]">
-              Б корпус
-            </strong>
-
-            <span className="text-[11px] font-medium tracking-[0.25px] text-[#64819b]">
-              Высшая ИТ-школа
-            </span>
-          </div>
-        </div>
-
-        <div className="relative mt-auto min-h-[190px] flex-1 bg-cover bg-center" style={{ backgroundImage: 'linear-gradient(to bottom, rgba(227,242,255,0) 40%, rgba(18,52,81,0.53) 100%), url("/images/building.jpg")' }}>
-          <div className="absolute inset-x-0 bottom-0 flex flex-col gap-[5px] bg-gradient-to-t from-[#102d49]/80 to-transparent px-3 pb-[14px] pt-[30px] text-white">
-            <span className="text-[7px] tracking-[1px]">
-              УЧЕБНОЕ ПРОСТРАНСТВО
-            </span>
-
-            <strong className="text-[14px]">
-              Б корпус
-            </strong>
-          </div>
-        </div>
-      </aside>
-
-      <section id="rooms" className="min-h-screen md:ml-[168px]">
+      <section id="rooms" className="min-h-screen">
         <header className="border-b border-[#dce8f1] bg-white px-4 py-4 sm:px-7 sm:py-5 lg:px-10">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
@@ -237,7 +223,12 @@ export default function Home() {
                 </div>
               )}
 
-              <DateSelector date={date} setDate={setDate} weekType={weekType} weekNumber={weekNumber} />
+              <DateSelector
+                date={date}
+                setDate={setDate}
+                weekType={weekType}
+                weekNumber={weekNumber}
+              />
             </div>
           </div>
         </header>
@@ -257,13 +248,17 @@ export default function Home() {
                 type="button"
                 onClick={() => setPeriod(index)}
                 aria-pressed={isSelected}
-                className={`relative flex min-h-[64px] flex-col justify-center rounded-xl border px-4 py-3 text-left transition ${isSelected ? "border-[#1683d8] bg-[#eaf5ff] shadow-sm" : "border-[#dce8f1] bg-white hover:border-[#b7d7ed] hover:bg-[#fbfdff]"}`}
+                className={`relative flex min-h-[64px] flex-col justify-center rounded-xl border px-4 py-3 text-left transition ${isCurrent ? "border-[#26a65b] shadow-[0_0_0_1px_#26a65b]" : isSelected ? "border-[#1683d8] bg-[#eaf5ff] shadow-sm" : "border-[#dce8f1] bg-white hover:border-[#b7d7ed] hover:bg-[#fbfdff]"}`}
               >
                 {isCurrent && (
-                  <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-[#26a65b]" title="Сейчас идёт эта пара" aria-label="Сейчас идёт эта пара" />
+                  <span
+                    className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-[#26a65b] shadow-[0_0_0_3px_rgba(38,166,91,0.12)]"
+                    title="Текущая пара"
+                    aria-label="Текущая пара"
+                  />
                 )}
 
-                <strong className="text-[13px] font-semibold text-[#12395e]">
+                <strong className={`text-[13px] font-semibold ${isSelected ? "text-[#126aa8]" : "text-[#12395e]"}`}>
                   {item.name}
                 </strong>
 
@@ -276,7 +271,11 @@ export default function Home() {
         </section>
 
         <section className="flex flex-col gap-3 px-4 pb-4 sm:px-7 lg:flex-row lg:items-center lg:justify-between lg:px-10">
-          <RoomFilters floors={floors} floor={floor} setFloor={setFloor} />
+          <RoomFilters
+            floors={floors}
+            floor={floor}
+            setFloor={setFloor}
+          />
 
           <div className="flex items-center justify-between gap-3 lg:justify-end">
             <div className="flex items-center gap-2 whitespace-nowrap text-[11px] font-medium text-[#64819b]">
@@ -298,7 +297,7 @@ export default function Home() {
             </div>
 
             <div className="flex items-center rounded-lg border border-[#dce9f3] bg-white p-1" aria-label="Вид аудиторий">
-              <button type="button" className={`flex h-8 w-8 items-center justify-center rounded-md transition ${view === "grid" ? "bg-[#eaf5ff] text-[#1d78c8]" : "text-[#7893aa] hover:bg-[#f5f9fc]"}`} onClick={() => setView("grid")} aria-label="Плитка" aria-pressed={view === "grid"} title="Плитка">
+              <button type="button" className={`hidden h-8 w-8 items-center justify-center rounded-md transition lg:flex ${view === "grid" ? "bg-[#eaf5ff] text-[#1d78c8]" : "text-[#7893aa] hover:bg-[#f5f9fc]"}`} onClick={() => setView("grid")} aria-label="Плитка" aria-pressed={view === "grid"} title="Плитка">
                 <Grid2X2 size={17} strokeWidth={2} />
               </button>
 
@@ -337,7 +336,14 @@ export default function Home() {
               На выбранном этаже аудитории не найдены.
             </div>
           ) : (
-            <RoomGrid rooms={visibleRooms} period={period + 1} view={view} weeklySchedule={weeklySchedule} date={date} weekType={weekType} />
+            <RoomGrid
+              rooms={visibleRooms}
+              period={period + 1}
+              view={view}
+              weeklySchedule={weeklySchedule}
+              date={date}
+              weekType={weekType}
+            />
           )}
         </div>
 
