@@ -14,15 +14,7 @@ type DateSelectorProps = {
   weekNumber?: number | null;
 };
 
-const weekdays = [
-  "Пн",
-  "Вт",
-  "Ср",
-  "Чт",
-  "Пт",
-  "Сб",
-  "Вс",
-];
+const weekdays = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 
 const monthNames = [
   "январь",
@@ -40,14 +32,11 @@ const monthNames = [
 ];
 
 function formatDate(date: string) {
-  return new Date(`${date}T12:00:00`).toLocaleDateString(
-    "ru-RU",
-    {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    }
-  );
+  return new Date(`${date}T12:00:00`).toLocaleDateString("ru-RU", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 }
 
 function toDateString(date: Date) {
@@ -73,11 +62,7 @@ function isSameDate(first: Date, second: Date) {
 }
 
 function startOfDay(date: Date) {
-  return new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate()
-  );
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
 export default function DateSelector({
@@ -88,61 +73,37 @@ export default function DateSelector({
 }: DateSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const selectedDate = useMemo(
-    () => parseDate(date),
-    [date]
-  );
+  const selectedDate = useMemo(() => parseDate(date), [date]);
 
-  const today = useMemo(
-    () => startOfDay(new Date()),
-    []
-  );
+  const today = useMemo(() => startOfDay(new Date()), []);
 
   const [visibleMonth, setVisibleMonth] = useState(
-    () =>
-      new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        1
-      )
+    () => new Date(today.getFullYear(), today.getMonth(), 1)
   );
 
-  const containerRef =
-    useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         containerRef.current &&
-        !containerRef.current.contains(
-          event.target as Node
-        )
+        !containerRef.current.contains(event.target as Node)
       ) {
         setIsOpen(false);
       }
     };
 
-    document.addEventListener(
-      "mousedown",
-      handleClickOutside
-    );
+    document.addEventListener("mousedown", handleClickOutside);
 
     return () => {
-      document.removeEventListener(
-        "mousedown",
-        handleClickOutside
-      );
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
   useEffect(() => {
     if (isOpen) {
       setVisibleMonth(
-        new Date(
-          selectedDate.getFullYear(),
-          selectedDate.getMonth(),
-          1
-        )
+        new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)
       );
     }
   }, [isOpen, selectedDate]);
@@ -151,62 +112,29 @@ export default function DateSelector({
     const year = visibleMonth.getFullYear();
     const month = visibleMonth.getMonth();
 
-    const firstDay = new Date(
-      year,
-      month,
-      1
-    );
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
 
-    const lastDay = new Date(
-      year,
-      month + 1,
-      0
-    );
+    const firstWeekday = (firstDay.getDay() + 6) % 7;
+    const daysInMonth = lastDay.getDate();
 
-    const firstWeekday =
-      (firstDay.getDay() + 6) % 7;
-
-    const daysInMonth =
-      lastDay.getDate();
-
-    const previousMonthDays =
-      new Date(
-        year,
-        month,
-        0
-      ).getDate();
+    const previousMonthDays = new Date(year, month, 0).getDate();
 
     const result: {
       date: Date;
       currentMonth: boolean;
     }[] = [];
 
-    for (
-      let i = firstWeekday - 1;
-      i >= 0;
-      i--
-    ) {
+    for (let i = firstWeekday - 1; i >= 0; i--) {
       result.push({
-        date: new Date(
-          year,
-          month - 1,
-          previousMonthDays - i
-        ),
+        date: new Date(year, month - 1, previousMonthDays - i),
         currentMonth: false,
       });
     }
 
-    for (
-      let day = 1;
-      day <= daysInMonth;
-      day++
-    ) {
+    for (let day = 1; day <= daysInMonth; day++) {
       result.push({
-        date: new Date(
-          year,
-          month,
-          day
-        ),
+        date: new Date(year, month, day),
         currentMonth: true,
       });
     }
@@ -215,11 +143,7 @@ export default function DateSelector({
 
     while (result.length % 7 !== 0) {
       result.push({
-        date: new Date(
-          year,
-          month + 1,
-          nextDay
-        ),
+        date: new Date(year, month + 1, nextDay),
         currentMonth: false,
       });
 
@@ -230,10 +154,8 @@ export default function DateSelector({
   }, [visibleMonth]);
 
   const currentMonthIsToday =
-    visibleMonth.getFullYear() ===
-      today.getFullYear() &&
-    visibleMonth.getMonth() ===
-      today.getMonth();
+    visibleMonth.getFullYear() === today.getFullYear() &&
+    visibleMonth.getMonth() === today.getMonth();
 
   const goToPreviousMonth = () => {
     if (currentMonthIsToday) {
@@ -242,28 +164,19 @@ export default function DateSelector({
 
     setVisibleMonth(
       (current) =>
-        new Date(
-          current.getFullYear(),
-          current.getMonth() - 1,
-          1
-        )
+        new Date(current.getFullYear(), current.getMonth() - 1, 1)
     );
   };
 
   const goToNextMonth = () => {
     setVisibleMonth(
       (current) =>
-        new Date(
-          current.getFullYear(),
-          current.getMonth() + 1,
-          1
-        )
+        new Date(current.getFullYear(), current.getMonth() + 1, 1)
     );
   };
 
   const selectDate = (selected: Date) => {
-    const selectedDay =
-      startOfDay(selected);
+    const selectedDay = startOfDay(selected);
 
     if (selectedDay < today) {
       return;
@@ -281,11 +194,7 @@ export default function DateSelector({
     setDate(toDateString(today));
 
     setVisibleMonth(
-      new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        1
-      )
+      new Date(today.getFullYear(), today.getMonth(), 1)
     );
 
     setIsOpen(false);
@@ -299,40 +208,39 @@ export default function DateSelector({
         : "Каждую неделю";
 
   return (
-    <div
-      ref={containerRef}
-      className="relative shrink-0"
-    >
+    <div ref={containerRef} className="relative shrink-0">
       <button
         type="button"
-        onClick={() =>
-          setIsOpen((value) => !value)
-        }
-        className="flex h-11 w-full min-w-0 cursor-pointer items-center gap-2 rounded-xl border border-[#dce9f3] bg-white px-3 text-left shadow-sm transition hover:border-[#b9d8ef] hover:shadow-md sm:min-w-[220px] sm:gap-3 sm:px-4"
+        onClick={() => setIsOpen((value) => !value)}
+        className="flex h-12 w-full min-w-[250px] cursor-pointer items-center gap-3 rounded-xl border border-[#dce9f3] bg-white px-4 text-left shadow-sm transition hover:border-[#b9d8ef] hover:shadow-md sm:min-w-[250px] min-[1800px]:h-[70px] min-[1800px]:min-w-[300px] min-[1800px]:gap-4 min-[1800px]:rounded-xl min-[1800px]:px-5"
         aria-expanded={isOpen}
         aria-haspopup="dialog"
       >
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#eaf5ff] text-[#1d78c8] sm:h-9 sm:w-9">
-          <CalendarDays
-            size={17}
-            strokeWidth={2}
-          />
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#eaf5ff] text-[#1d78c8] min-[1800px]:h-11 min-[1800px]:w-11 min-[1800px]:rounded-xl">
+          <CalendarDays size={18} strokeWidth={2} className="min-[1800px]:h-6 min-[1800px]:w-6" />
         </span>
 
-        <span className="flex min-w-0 flex-col">
-          <span className="text-[8px] font-medium uppercase tracking-[0.4px] text-[#8aa0b2] sm:text-[9px]">
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="text-[9px] font-medium uppercase tracking-[0.4px] text-[#8aa0b2] min-[1800px]:text-[11px]">
             Выбранная дата
           </span>
 
-          <span className="mt-0.5 truncate text-[11px] font-semibold text-[#12395e] sm:text-[12px]">
+          <span className="mt-0.5 truncate text-[12px] font-semibold text-[#12395e] min-[1800px]:mt-1 min-[1800px]:text-[15px]">
             {formatDate(date)}
           </span>
+
+          <span className="mt-0.5 truncate text-[8px] text-[#8aa0b2] min-[1800px]:mt-1 min-[1800px]:text-[10px]">
+            {weekNumber ? `Неделя ${weekNumber} · ` : ""}
+            {weekLabel}
+          </span>
         </span>
+
+        <ChevronRight size={17} strokeWidth={2} className={`shrink-0 text-[#7893aa] transition-transform ${isOpen ? "rotate-90" : ""} min-[1800px]:h-5 min-[1800px]:w-5`} />
       </button>
 
       {isOpen && (
         <div
-          className="absolute right-0 top-[calc(100%+8px)] z-50 w-[calc(100vw-24px)] max-w-[340px] overflow-hidden rounded-2xl border border-[#dce9f3] bg-white p-3 shadow-[0_20px_55px_rgba(18,57,94,0.16)] sm:p-4"
+          className="absolute right-0 top-[calc(100%+8px)] z-50 w-[calc(100vw-24px)] max-w-[340px] overflow-hidden rounded-2xl border border-[#dce9f3] bg-white p-3 shadow-[0_20px_55px_rgba(18,57,94,0.16)] sm:p-4 min-[1800px]:top-[calc(100%+10px)] min-[1800px]:max-w-[390px] min-[1800px]:rounded-2xl min-[1800px]:p-5"
           role="dialog"
           aria-label="Выбор даты"
         >
@@ -341,50 +249,42 @@ export default function DateSelector({
               type="button"
               onClick={goToPreviousMonth}
               disabled={currentMonthIsToday}
-              className={`flex h-9 w-9 items-center justify-center rounded-xl transition ${currentMonthIsToday ? "cursor-not-allowed text-[#cbd6de]" : "text-[#7893aa] hover:bg-[#eaf5ff] hover:text-[#1d78c8]"}`}
+              className={`flex h-9 w-9 items-center justify-center rounded-xl transition min-[1800px]:h-11 min-[1800px]:w-11 ${currentMonthIsToday ? "cursor-not-allowed text-[#cbd6de]" : "text-[#7893aa] hover:bg-[#eaf5ff] hover:text-[#1d78c8]"}`}
               aria-label="Предыдущий месяц"
             >
-              <ChevronLeft
-                size={20}
-                strokeWidth={2}
-              />
+              <ChevronLeft size={20} strokeWidth={2} className="min-[1800px]:h-6 min-[1800px]:w-6" />
             </button>
 
-            <div className="text-[14px] font-semibold capitalize text-[#12395e]">
-              {monthNames[
-                visibleMonth.getMonth()
-              ]}{" "}
+            <div className="text-[14px] font-semibold capitalize text-[#12395e] min-[1800px]:text-[17px]">
+              {monthNames[visibleMonth.getMonth()]}{" "}
               {visibleMonth.getFullYear()}
             </div>
 
             <button
               type="button"
               onClick={goToNextMonth}
-              className="flex h-9 w-9 items-center justify-center rounded-xl text-[#7893aa] transition hover:bg-[#eaf5ff] hover:text-[#1d78c8]"
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-[#7893aa] transition hover:bg-[#eaf5ff] hover:text-[#1d78c8] min-[1800px]:h-11 min-[1800px]:w-11"
               aria-label="Следующий месяц"
             >
-              <ChevronRight
-                size={20}
-                strokeWidth={2}
-              />
+              <ChevronRight size={20} strokeWidth={2} className="min-[1800px]:h-6 min-[1800px]:w-6" />
             </button>
           </div>
 
-          <div className="mt-2 flex justify-center">
-            <span className="max-w-full truncate rounded-full bg-[#eaf5ff] px-3 py-1 text-[9px] font-semibold text-[#1d78c8]">
+          <div className="mt-2 flex justify-center min-[1800px]:mt-3">
+            <span className="max-w-full truncate rounded-full bg-[#eaf5ff] px-3 py-1 text-[9px] font-semibold text-[#1d78c8] min-[1800px]:px-4 min-[1800px]:py-1.5 min-[1800px]:text-[11px]">
               {weekNumber
                 ? `Неделя ${weekNumber} · ${weekLabel.toLowerCase()}`
                 : weekLabel}
             </span>
           </div>
 
-          <div className="my-3 border-t border-[#eef4f8]" />
+          <div className="my-3 border-t border-[#eef4f8] min-[1800px]:my-4" />
 
           <div className="grid grid-cols-7">
             {weekdays.map((day) => (
               <div
                 key={day}
-                className="flex h-8 items-center justify-center text-[10px] font-semibold text-[#8aa0b2] sm:h-9 sm:text-[11px]"
+                className="flex h-8 items-center justify-center text-[10px] font-semibold text-[#8aa0b2] sm:h-9 sm:text-[11px] min-[1800px]:h-10 min-[1800px]:text-[12px]"
               >
                 {day}
               </div>
@@ -392,72 +292,47 @@ export default function DateSelector({
           </div>
 
           <div className="grid grid-cols-7 gap-y-1">
-            {days.map(
-              ({
-                date: calendarDate,
-                currentMonth,
-              }) => {
-                const calendarDay =
-                  startOfDay(calendarDate);
+            {days.map(({ date: calendarDate, currentMonth }) => {
+              const calendarDay = startOfDay(calendarDate);
+              const isSunday = calendarDate.getDay() === 0;
+              const isPast = calendarDay < today;
+              const isDisabled = isPast || isSunday;
 
-                const isSunday =
-                  calendarDate.getDay() === 0;
+              const selected = isSameDate(
+                calendarDate,
+                selectedDate
+              );
 
-                const isPast =
-                  calendarDay < today;
+              const isToday = isSameDate(
+                calendarDate,
+                today
+              );
 
-                const isDisabled =
-                  isPast || isSunday;
+              return (
+                <button
+                  key={toDateString(calendarDate)}
+                  type="button"
+                  disabled={isDisabled}
+                  onClick={() => selectDate(calendarDate)}
+                  className="relative flex h-10 items-center justify-center rounded-xl sm:h-11 min-[1800px]:h-12"
+                >
+                  <span className={`flex h-9 w-9 items-center justify-center rounded-xl text-[12px] transition sm:h-10 sm:w-10 sm:text-[13px] min-[1800px]:h-11 min-[1800px]:w-11 min-[1800px]:text-[14px] ${selected && !isDisabled ? "bg-[#1d78c8] font-semibold text-white shadow-sm" : isToday && !isDisabled ? "border border-[#365873] bg-white font-medium text-[#365873]" : isDisabled ? "cursor-not-allowed text-[#d2dbe1]" : currentMonth ? "text-[#365873] hover:bg-[#f1f8fc] hover:text-[#1d78c8]" : "text-[#cbd5dc]"}`}>
+                    {calendarDate.getDate()}
+                  </span>
 
-                const selected =
-                  isSameDate(
-                    calendarDate,
-                    selectedDate
-                  );
-
-                const isToday =
-                  isSameDate(
-                    calendarDate,
-                    today
-                  );
-
-                return (
-                  <button
-                    key={toDateString(
-                      calendarDate
-                    )}
-                    type="button"
-                    disabled={isDisabled}
-                    onClick={() =>
-                      selectDate(
-                        calendarDate
-                      )
-                    }
-                    className="relative flex h-10 items-center justify-center rounded-xl sm:h-11"
-                  >
-                    <span
-                      className={`flex h-9 w-9 items-center justify-center rounded-xl text-[12px] transition sm:h-10 sm:w-10 sm:text-[13px] ${selected && !isDisabled ? "bg-[#1d78c8] font-semibold text-white shadow-sm" : isToday && !isDisabled ? "border border-[#365873] bg-white font-medium text-[#365873]" : isDisabled ? "cursor-not-allowed text-[#d2dbe1]" : currentMonth ? "text-[#365873] hover:bg-[#f1f8fc] hover:text-[#1d78c8]" : "text-[#cbd5dc]"}`}
-                    >
-                      {calendarDate.getDate()}
-                    </span>
-
-                    {!isSunday &&
-                      !isPast && (
-                        <span className="absolute bottom-0.5 h-1.5 w-1.5 rounded-full bg-[#f5b400]" />
-                      )}
-                  </button>
-                );
-              }
-            )}
+                  {!isSunday && !isPast && (
+                    <span className="absolute bottom-0.5 h-1.5 w-1.5 rounded-full bg-[#f5b400] min-[1800px]:h-2 min-[1800px]:w-2" />
+                  )}
+                </button>
+              );
+            })}
           </div>
 
-          <div className="mt-3 flex items-center justify-between border-t border-[#eef4f8] pt-3">
+          <div className="mt-3 flex items-center justify-between border-t border-[#eef4f8] pt-3 min-[1800px]:mt-4 min-[1800px]:pt-4">
             <button
               type="button"
-              onClick={() =>
-                setIsOpen(false)
-              }
-              className="rounded-lg px-3 py-2 text-[10px] font-medium text-[#7893aa] transition hover:bg-[#f5f9fc] hover:text-[#365873]"
+              onClick={() => setIsOpen(false)}
+              className="rounded-lg px-3 py-2 text-[10px] font-medium text-[#7893aa] transition hover:bg-[#f5f9fc] hover:text-[#365873] min-[1800px]:px-4 min-[1800px]:py-2.5 min-[1800px]:text-[12px]"
             >
               Закрыть
             </button>
@@ -465,17 +340,14 @@ export default function DateSelector({
             <button
               type="button"
               onClick={goToToday}
-              className="rounded-lg bg-[#eaf5ff] px-3 py-2 text-[10px] font-semibold text-[#1d78c8] transition hover:bg-[#dff1ff]"
+              className="rounded-lg bg-[#eaf5ff] px-3 py-2 text-[10px] font-semibold text-[#1d78c8] transition hover:bg-[#dff1ff] min-[1800px]:px-4 min-[1800px]:py-2.5 min-[1800px]:text-[12px]"
             >
               Сегодня
             </button>
           </div>
 
-          <div className="mt-2 text-center text-[9px] text-[#9aafbe]">
-            Сегодня:{" "}
-            {formatDate(
-              toDateString(today)
-            )}
+          <div className="mt-2 text-center text-[9px] text-[#9aafbe] min-[1800px]:mt-3 min-[1800px]:text-[10px]">
+            Сегодня: {formatDate(toDateString(today))}
           </div>
         </div>
       )}

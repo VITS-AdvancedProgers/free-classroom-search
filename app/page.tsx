@@ -1,17 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-
 import { periods } from "./data/rooms";
-
 import { useRooms } from "./hooks/useRooms";
-
 import DateSelector from "./components/DateSelector";
-
 import RoomFilters from "./components/RoomFilters";
-
 import RoomGrid from "./components/RoomGrid";
-
 import { Grid2X2, List, Table } from "lucide-react";
 
 type View = "grid" | "list" | "table";
@@ -66,7 +60,6 @@ export default function Home() {
 
   useEffect(() => {
     const savedView = localStorage.getItem("rooms-view");
-
     const isMobile = window.innerWidth < 1024;
 
     if (isMobile) {
@@ -75,11 +68,7 @@ export default function Home() {
       return;
     }
 
-    if (
-      savedView === "grid" ||
-      savedView === "list" ||
-      savedView === "table"
-    ) {
+    if (savedView === "grid" || savedView === "list" || savedView === "table") {
       setView(savedView);
     }
 
@@ -160,15 +149,10 @@ export default function Home() {
       );
   }, [rooms, floor]);
 
-  const freeCount = rooms.filter(
-    (room) => !room.lessons[period]
-  ).length;
-
+  const freeCount = rooms.filter((room) => !room.lessons[period]).length;
   const busyCount = rooms.length - freeCount;
 
-  const formattedDate = new Date(
-    `${date}T12:00:00`
-  ).toLocaleDateString("ru-RU", {
+  const formattedDate = new Date(`${date}T12:00:00`).toLocaleDateString("ru-RU", {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -191,55 +175,45 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#f6f9fc] text-[#12395e]">
       <section id="rooms" className="min-h-screen">
-        <header className="border-b border-[#dce8f1] bg-white px-4 py-4 sm:px-7 sm:py-5 lg:px-10">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <header className="border-b border-[#dce8f1] bg-white px-4 py-4 sm:px-7 sm:py-5 lg:px-10 min-[1800px]:px-12 min-[1800px]:py-7">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between min-[1800px]:gap-8">
             <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h1 className="text-[24px] font-bold tracking-[-0.7px] text-[#12395e] sm:text-[28px]">
+              <div className="flex items-center gap-2 min-[1800px]:gap-4">
+                <h1 className="text-[24px] font-bold tracking-[-0.7px] text-[#12395e] sm:text-[28px] min-[1800px]:text-[36px] min-[1800px]:tracking-[-1px]">
                   Аудитории
                 </h1>
 
                 {weekNumber && (
-                  <span className="hidden items-center gap-1.5 rounded-full bg-[#eaf5ff] px-2.5 py-1 text-[10px] font-semibold text-[#1674bb] lg:inline-flex">
-                    <span className={`h-1.5 w-1.5 rounded-full ${weekType === 1 ? "bg-[#168a46]" : weekType === 2 ? "bg-[#d93636]" : "bg-[#f0a900]"}`} />
+                  <span className="hidden items-center gap-1.5 rounded-full bg-[#eaf5ff] px-2.5 py-1 text-[10px] font-semibold text-[#1674bb] lg:inline-flex min-[1800px]:gap-2 min-[1800px]:rounded-full min-[1800px]:px-4 min-[1800px]:py-2 min-[1800px]:text-[13px]">
+                    <span className={`h-1.5 w-1.5 rounded-full min-[1800px]:h-2.5 min-[1800px]:w-2.5 ${weekType === 1 ? "bg-[#168a46]" : weekType === 2 ? "bg-[#d93636]" : "bg-[#f0a900]"}`} />
                     Неделя {weekNumber} · {weekLabel.toLowerCase()}
                   </span>
                 )}
               </div>
 
-              <p className="mt-1 max-w-[300px] text-[11px] leading-4 text-[#7890a5] sm:text-[12px]">
+              <p className="mt-1 max-w-[300px] text-[11px] leading-4 text-[#7890a5] sm:text-[12px] min-[1800px]:mt-2 min-[1800px]:max-w-none min-[1800px]:text-[15px] min-[1800px]:leading-5">
                 Б корпус · доступность аудиторий
               </p>
             </div>
 
-            <div className="flex w-full items-center gap-2 lg:w-auto lg:shrink-0">
+            <div className="flex w-full items-center gap-2 lg:w-auto lg:shrink-0 min-[1800px]:gap-4">
               {weekNumber && (
                 <div className="flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#dce9f3] bg-[#f8fbfd] px-2 py-2 text-[10px] font-semibold text-[#5e7b94] sm:px-3 lg:hidden">
                   <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${weekType === 1 ? "bg-[#168a46]" : weekType === 2 ? "bg-[#d93636]" : "bg-[#f0a900]"}`} />
-
                   <span className="truncate">
                     Неделя {weekNumber} · {weekLabel.toLowerCase()}
                   </span>
                 </div>
               )}
 
-              <DateSelector
-                date={date}
-                setDate={setDate}
-                weekType={weekType}
-                weekNumber={weekNumber}
-              />
+              <DateSelector date={date} setDate={setDate} weekType={weekType} weekNumber={weekNumber} />
             </div>
           </div>
         </header>
 
-        <section id="schedule" aria-label="Выбор пары" className="grid grid-cols-2 gap-2.5 px-4 py-4 sm:grid-cols-3 sm:px-7 lg:grid-cols-6 lg:px-10">
+        <section id="schedule" aria-label="Выбор пары" className="grid grid-cols-2 gap-2.5 px-4 py-4 sm:grid-cols-3 sm:px-7 lg:grid-cols-6 lg:px-10 min-[1800px]:gap-4 min-[1800px]:px-12 min-[1800px]:py-5">
           {periods.map((item, index) => {
-            const isCurrent =
-              clockReady &&
-              isToday &&
-              index === currentPeriod;
-
+            const isCurrent = clockReady && isToday && index === currentPeriod;
             const isSelected = period === index;
 
             return (
@@ -248,21 +222,17 @@ export default function Home() {
                 type="button"
                 onClick={() => setPeriod(index)}
                 aria-pressed={isSelected}
-                className={`relative flex min-h-[64px] flex-col justify-center rounded-xl border px-4 py-3 text-left transition ${isCurrent ? "border-[#26a65b] shadow-[0_0_0_1px_#26a65b]" : isSelected ? "border-[#1683d8] bg-[#eaf5ff] shadow-sm" : "border-[#dce8f1] bg-white hover:border-[#b7d7ed] hover:bg-[#fbfdff]"}`}
+                className={`relative flex min-h-[64px] flex-col justify-center rounded-xl border px-4 py-3 text-left transition min-[1800px]:min-h-[76px] min-[1800px]:rounded-2xl min-[1800px]:border-[1.5px] min-[1800px]:px-5 min-[1800px]:py-4 ${isCurrent ? "border-[#26a65b] shadow-[0_0_0_2px_#26a65b]" : "border-[#dce8f1]"} ${isSelected ? "bg-[#eaf5ff] shadow-sm" : "bg-white hover:border-[#b7d7ed] hover:bg-[#fbfdff]"}`}
               >
                 {isCurrent && (
-                  <span
-                    className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-[#26a65b] shadow-[0_0_0_3px_rgba(38,166,91,0.12)]"
-                    title="Текущая пара"
-                    aria-label="Текущая пара"
-                  />
+                  <span className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-[#26a65b] shadow-[0_0_0_3px_rgba(38,166,91,0.12)] min-[1800px]:right-5 min-[1800px]:top-5 min-[1800px]:h-3.5 min-[1800px]:w-3.5" title="Текущая пара" aria-label="Текущая пара" />
                 )}
 
-                <strong className={`text-[13px] font-semibold ${isSelected ? "text-[#126aa8]" : "text-[#12395e]"}`}>
+                <strong className={`text-[13px] font-semibold ${isSelected ? "text-[#126aa8]" : "text-[#12395e]"} min-[1800px]:text-[16px]`}>
                   {item.name}
                 </strong>
 
-                <span className="mt-1 text-[10px] text-[#7893aa]">
+                <span className="mt-1 text-[10px] text-[#7893aa] min-[1800px]:mt-2 min-[1800px]:text-[11px]">
                   {item.time}
                 </span>
               </button>
@@ -270,69 +240,63 @@ export default function Home() {
           })}
         </section>
 
-        <section className="flex flex-col gap-3 px-4 pb-4 sm:px-7 lg:flex-row lg:items-center lg:justify-between lg:px-10">
-          <RoomFilters
-            floors={floors}
-            floor={floor}
-            setFloor={setFloor}
-          />
+        <section className="flex flex-col gap-3 px-4 pb-4 sm:px-7 lg:flex-row lg:items-center lg:justify-between lg:px-10 min-[1800px]:gap-5 min-[1800px]:px-12 min-[1800px]:pb-5">
+          <div className="min-[1800px]:text-[14px]">
+            <RoomFilters floors={floors} floor={floor} setFloor={setFloor} />
+          </div>
 
-          <div className="flex items-center justify-between gap-3 lg:justify-end">
-            <div className="flex items-center gap-2 whitespace-nowrap text-[11px] font-medium text-[#64819b]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#26a65b]" />
+          <div className="flex items-center justify-between gap-3 lg:justify-end min-[1800px]:gap-6">
+            <div className="flex items-center gap-2 whitespace-nowrap text-[11px] font-medium text-[#64819b] min-[1800px]:gap-3 min-[1800px]:text-[14px]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#26a65b] min-[1800px]:h-2.5 min-[1800px]:w-2.5" />
 
-              {isScheduleReady
-                ? `${freeCount} свободно`
-                : "Загрузка"}
+              {isScheduleReady ? `${freeCount} свободно` : "Загрузка"}
 
               <span className="text-[#c7d4de]">
                 ·
               </span>
 
-              <span className="h-1.5 w-1.5 rounded-full bg-[#d93636]" />
+              <span className="h-1.5 w-1.5 rounded-full bg-[#d93636] min-[1800px]:h-2.5 min-[1800px]:w-2.5" />
 
-              {isScheduleReady
-                ? `${busyCount} занято`
-                : ""}
+              {isScheduleReady ? `${busyCount} занято` : ""}
             </div>
 
-            <div className="flex items-center rounded-lg border border-[#dce9f3] bg-white p-1" aria-label="Вид аудиторий">
-              <button type="button" className={`hidden h-8 w-8 items-center justify-center rounded-md transition lg:flex ${view === "grid" ? "bg-[#eaf5ff] text-[#1d78c8]" : "text-[#7893aa] hover:bg-[#f5f9fc]"}`} onClick={() => setView("grid")} aria-label="Плитка" aria-pressed={view === "grid"} title="Плитка">
-                <Grid2X2 size={17} strokeWidth={2} />
+            <div className="flex items-center rounded-lg border border-[#dce9f3] bg-white p-1 min-[1800px]:rounded-xl min-[1800px]:p-1.5" aria-label="Вид аудиторий">
+              <button type="button" className={`hidden h-8 w-8 items-center justify-center rounded-md transition lg:flex min-[1800px]:h-11 min-[1800px]:w-11 min-[1800px]:rounded-lg ${view === "grid" ? "bg-[#eaf5ff] text-[#1d78c8]" : "text-[#7893aa] hover:bg-[#f5f9fc]"}`} onClick={() => setView("grid")} aria-label="Плитка" aria-pressed={view === "grid"} title="Плитка">
+                <Grid2X2 size={17} strokeWidth={2} className="min-[1800px]:h-6 min-[1800px]:w-6" />
               </button>
 
-              <button type="button" className={`flex h-8 w-8 items-center justify-center rounded-md transition ${view === "list" ? "bg-[#eaf5ff] text-[#1d78c8]" : "text-[#7893aa] hover:bg-[#f5f9fc]"}`} onClick={() => setView("list")} aria-label="Список" aria-pressed={view === "list"} title="Список">
-                <List size={17} strokeWidth={2} />
+              <button type="button" className={`flex h-8 w-8 items-center justify-center rounded-md transition min-[1800px]:h-11 min-[1800px]:w-11 min-[1800px]:rounded-lg ${view === "list" ? "bg-[#eaf5ff] text-[#1d78c8]" : "text-[#7893aa] hover:bg-[#f5f9fc]"}`} onClick={() => setView("list")} aria-label="Список" aria-pressed={view === "list"} title="Список">
+                <List size={17} strokeWidth={2} className="min-[1800px]:h-6 min-[1800px]:w-6" />
               </button>
 
-              <button type="button" className={`flex h-8 w-8 items-center justify-center rounded-md transition ${view === "table" ? "bg-[#eaf5ff] text-[#1d78c8]" : "text-[#7893aa] hover:bg-[#f5f9fc]"}`} onClick={() => setView("table")} aria-label="Таблица" aria-pressed={view === "table"} title="Таблица">
-                <Table size={17} strokeWidth={2} />
+              <button type="button" className={`flex h-8 w-8 items-center justify-center rounded-md transition min-[1800px]:h-11 min-[1800px]:w-11 min-[1800px]:rounded-lg ${view === "table" ? "bg-[#eaf5ff] text-[#1d78c8]" : "text-[#7893aa] hover:bg-[#f5f9fc]"}`} onClick={() => setView("table")} aria-label="Таблица" aria-pressed={view === "table"} title="Таблица">
+                <Table size={17} strokeWidth={2} className="min-[1800px]:h-6 min-[1800px]:w-6" />
               </button>
             </div>
           </div>
         </section>
 
-        <div className="px-4 sm:px-7 lg:px-10">
+        <div className="px-4 sm:px-7 lg:px-10 min-[1800px]:px-12">
           {loading ? (
-            <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-[#dce8f1] bg-white text-[14px] text-[#7893aa]">
+            <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-[#dce8f1] bg-white text-[14px] text-[#7893aa] min-[1800px]:min-h-[260px] min-[1800px]:rounded-2xl min-[1800px]:text-[16px]">
               Загружаем аудитории...
             </div>
           ) : error ? (
-            <div className="flex min-h-[220px] flex-col items-center justify-center gap-4 rounded-2xl border border-[#f0d6d6] bg-white px-5 text-center">
-              <strong className="text-[14px] text-[#b84040]">
+            <div className="flex min-h-[220px] flex-col items-center justify-center gap-4 rounded-2xl border border-[#f0d6d6] bg-white px-5 text-center min-[1800px]:min-h-[260px]">
+              <strong className="text-[14px] text-[#b84040] min-[1800px]:text-[17px]">
                 {error}
               </strong>
 
-              <button type="button" onClick={() => window.location.reload()} className="rounded-lg bg-[#12395e] px-4 py-2 text-[12px] font-medium text-white transition hover:bg-[#0d2e4c]">
+              <button type="button" onClick={() => window.location.reload()} className="rounded-lg bg-[#12395e] px-4 py-2 text-[12px] font-medium text-white transition hover:bg-[#0d2e4c] min-[1800px]:rounded-xl min-[1800px]:px-6 min-[1800px]:py-3 min-[1800px]:text-[14px]">
                 Повторить
               </button>
             </div>
           ) : scheduleLoading ? (
-            <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-[#dce8f1] bg-white text-[14px] text-[#7893aa]">
+            <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-[#dce8f1] bg-white text-[14px] text-[#7893aa] min-[1800px]:min-h-[260px] min-[1800px]:text-[16px]">
               Загружаем расписание...
             </div>
           ) : visibleRooms.length === 0 ? (
-            <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-[#dce8f1] bg-white text-[14px] text-[#7893aa]">
+            <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-[#dce8f1] bg-white text-[14px] text-[#7893aa] min-[1800px]:min-h-[260px] min-[1800px]:text-[16px]">
               На выбранном этаже аудитории не найдены.
             </div>
           ) : (
@@ -347,7 +311,7 @@ export default function Home() {
           )}
         </div>
 
-        <footer className="flex items-center justify-center gap-2 px-4 py-8 text-[11px] text-[#91a7b9] sm:px-7 lg:px-10">
+        <footer className="flex items-center justify-center gap-2 px-4 py-8 text-[11px] text-[#91a7b9] sm:px-7 lg:px-10 min-[1800px]:gap-3 min-[1800px]:px-12 min-[1800px]:py-6 min-[1800px]:text-[13px]">
           <span>Б корпус</span>
           <span>·</span>
           <span>{formattedDate}</span>
