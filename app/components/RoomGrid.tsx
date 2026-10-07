@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { periods, type Room } from "../data/rooms";
 import type { WeekLesson, WeekType } from "../hooks/useRooms";
 
@@ -119,9 +119,53 @@ export default function RoomGrid({
   const [selectedLesson, setSelectedLesson] = useState<WeekLesson | null>(
     null
   );
+  const tableContainerRef = useRef<HTMLDivElement>(null);
 
   const weekDates = useMemo(() => (date ? getWeekDates(date) : []), [date]);
+  useEffect(() => {
+  if (view !== "table" || !date || weekDates.length === 0) {
+    return;
+  }
 
+  const today = new Date();
+
+  const todayString = [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, "0"),
+    String(today.getDate()).padStart(2, "0"),
+  ].join("-");
+
+  if (!weekDates.includes(todayString)) {
+    return;
+  }
+
+  const scrollToToday = () => {
+    const container = tableContainerRef.current;
+
+    if (!container) {
+      return;
+    }
+
+    const todayRow = container.querySelector(
+      `[data-week-date="${todayString}"]`
+    ) as HTMLElement | null;
+
+    if (!todayRow) {
+      return;
+    }
+
+    const headerHeight = 70;
+
+    container.scrollTo({
+      top: Math.max(todayRow.offsetTop - headerHeight, 0),
+      behavior: "smooth",
+    });
+  };
+
+  const animationFrame = requestAnimationFrame(scrollToToday);
+
+  return () => cancelAnimationFrame(animationFrame);
+}, [view, date, weekDates]);
   const sortedRooms = useMemo(
     () =>
       [...rooms].sort((a, b) =>
@@ -135,7 +179,7 @@ export default function RoomGrid({
   if (view === "table" && date) {
     return (
       <>
-        <div className="w-full max-h-[calc(100vh-280px)] overflow-auto rounded-xl border border-[#dce8f1] bg-white shadow-[0_5px_18px_rgba(31,73,104,0.045)] min-[1800px]:max-h-[calc(100vh-210px)] min-[1800px]:rounded-xl">
+        <div ref={tableContainerRef} className="w-full max-h-[calc(100vh-280px)] overflow-auto rounded-xl border border-[#dce8f1] bg-white shadow-[0_5px_18px_rgba(31,73,104,0.045)] min-[1800px]:max-h-[calc(100vh-210px)] min-[1800px]:rounded-xl">
           <table className="w-max min-w-full border-collapse border-spacing-0 text-left">
             <thead>
               <tr>
@@ -166,7 +210,7 @@ export default function RoomGrid({
                   const time = splitTime(item.time);
 
                   return (
-                    <tr key={`${weekDate}-${item.name}`} className="h-[72px] min-[1800px]:h-[100px]">
+                    <tr data-week-date={weekDate} key={`${weekDate}-${item.name}`} className="h-[72px] min-[1800px]:h-[100px]">
                       {periodIndex === 0 && (
                         <th rowSpan={periods.length} className="sticky left-0 z-20 w-[96px] min-w-[96px] max-w-[96px] border-b border-r border-[#dce8f1] bg-[#fbfcfd] px-2 align-middle text-center min-[1800px]:w-[80px] min-[1800px]:min-w-[80px] min-[1800px]:max-w-[80px] min-[1800px]:px-1">
                           <div className="flex items-center justify-center">
@@ -224,10 +268,6 @@ export default function RoomGrid({
                                 }
                               }}
                             >
-                              {current && (
-                                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#26a65b] shadow-[0_0_0_2px_rgba(38,166,91,0.12)] min-[1800px]:right-3 min-[1800px]:top-3 min-[1800px]:h-3 min-[1800px]:w-3" />
-                              )}
-
                               {lesson ? (
                                 <>
                                   <span className="truncate text-[9px] font-bold min-[1800px]:text-[16px]">
