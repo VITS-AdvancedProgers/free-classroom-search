@@ -48,7 +48,7 @@ function formatDayDate(date: string): string {
 }
 
 function splitTime(time: string): { start: string; end: string } {
-  const parts = time.split("–");
+  const parts = time.split(/[–—-]/);
 
   return {
     start: parts[0]?.trim() ?? "",
@@ -70,8 +70,7 @@ function getLesson(
     const lessonDate = lesson.date.slice(0, 10);
     const correctDate = lessonDate === date;
     const correctPeriod = lesson.period === period;
-    const correctWeek =
-      lesson.typeWeekID === 0 || lesson.typeWeekID === weekType;
+    const correctWeek = lesson.typeWeekID === 0 || lesson.typeWeekID === weekType;
 
     return correctDate && correctPeriod && correctWeek;
   });
@@ -92,18 +91,26 @@ function isCurrentPeriod(periodIndex: number, date: string): boolean {
     return false;
   }
 
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-
   const periodInfo = periods[periodIndex];
 
   if (!periodInfo) {
     return false;
   }
 
-  const [start, end] = periodInfo.time.split("–").map((time) => {
-    const [hours, minutes] = time.trim().split(":").map(Number);
+  const times = periodInfo.time.match(/\d{1,2}:\d{2}/g);
+
+  if (!times || times.length < 2) {
+    return false;
+  }
+
+  const toMinutes = (value: string): number => {
+    const [hours, minutes] = value.split(":").map(Number);
     return hours * 60 + minutes;
-  });
+  };
+
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const start = toMinutes(times[0]);
+  const end = toMinutes(times[1]);
 
   return currentMinutes >= start && currentMinutes < end;
 }
@@ -116,63 +123,69 @@ export default function RoomGrid({
   date = "",
   weekType = 0,
 }: RoomGridProps) {
-  const [selectedLesson, setSelectedLesson] = useState<WeekLesson | null>(
-    null
-  );
+  const [selectedLesson, setSelectedLesson] = useState<WeekLesson | null>(null);
+  const [, setClockTick] = useState(0);
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
   const weekDates = useMemo(() => (date ? getWeekDates(date) : []), [date]);
+
+  // Обновляем текущее время каждые 15 секунд, чтобы подсветка пары не зависала.
   useEffect(() => {
-  if (view !== "table" || !date || weekDates.length === 0) {
-    return;
-  }
+    const timer = window.setInterval(() => {
+      setClockTick((tick) => tick + 1);
+    }, 15000);
 
-  const today = new Date();
+    return () => window.clearInterval(timer);
+  }, []);
 
-  const todayString = [
-    today.getFullYear(),
-    String(today.getMonth() + 1).padStart(2, "0"),
-    String(today.getDate()).padStart(2, "0"),
-  ].join("-");
-
-  if (!weekDates.includes(todayString)) {
-    return;
-  }
-
-  const scrollToToday = () => {
-    const container = tableContainerRef.current;
-
-    if (!container) {
+  // Автоматически прокручиваем таблицу к сегодняшнему дню.
+  useEffect(() => {
+    if (view !== "table" || !date || weekDates.length === 0) {
       return;
     }
 
-    const todayRow = container.querySelector(
-      `[data-week-date="${todayString}"]`
-    ) as HTMLElement | null;
+    const today = new Date();
 
-    if (!todayRow) {
+    const todayString = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, "0"),
+      String(today.getDate()).padStart(2, "0"),
+    ].join("-");
+
+    if (!weekDates.includes(todayString)) {
       return;
     }
 
-    const headerHeight = 70;
+    const scrollToToday = () => {
+      const container = tableContainerRef.current;
 
-    container.scrollTo({
-      top: Math.max(todayRow.offsetTop - headerHeight, 0),
-      behavior: "smooth",
-    });
-  };
+      if (!container) {
+        return;
+      }
 
-  const animationFrame = requestAnimationFrame(scrollToToday);
+      const todayRow = container.querySelector(
+        `[data-week-date="${todayString}"]`
+      ) as HTMLElement | null;
 
-  return () => cancelAnimationFrame(animationFrame);
-}, [view, date, weekDates]);
+      if (!todayRow) {
+        return;
+      }
+
+      const headerHeight = 70;
+
+      container.scrollTo({
+        top: Math.max(todayRow.offsetTop - headerHeight, 0),
+        behavior: "smooth",
+      });
+    };
+
+    const animationFrame = requestAnimationFrame(scrollToToday);
+
+    return () => cancelAnimationFrame(animationFrame);
+  }, [view, date, weekDates]);
+
   const sortedRooms = useMemo(
-    () =>
-      [...rooms].sort((a, b) =>
-        a.number.localeCompare(b.number, "ru", {
-          numeric: true,
-        })
-      ),
+    () => [...rooms].sort((a, b) => a.number.localeCompare(b.number, "ru", { numeric: true })),
     [rooms]
   );
 
@@ -183,11 +196,13 @@ export default function RoomGrid({
           <table className="w-max min-w-full border-collapse border-spacing-0 text-left">
             <thead>
               <tr>
-                <th className="sticky left-0 top-0 z-30 h-10 w-[96px] min-w-[96px] max-w-[96px] border-b border-r border-[#dce8f1] bg-[#f5f9fc] px-2 text-center text-[10px] font-semibold text-[#315773] min-[1800px]:h-[70px] min-[1800px]:w-[80px] min-[1800px]:min-w-[80px] min-[1800px]:max-w-[80px] min-[1800px]:text-[15px]">
+                <th className="sticky left-0 top-0 z-30 h-10 w-[36px] min-w-[36px] max-w-[36px] border-b border-r border-[#dce8f1] bg-[#f5f9fc] px-0 text-center text-[10px] font-semibold text-[#315773] min-[1800px]:w-[40px] min-[1800px]:min-w-[40px] min-[1800px]:max-w-[40px]
+                
+                min-[1800px]:text-[15px]">
                   День
                 </th>
 
-                <th className="sticky left-[96px] top-0 z-30 h-10 w-[68px] min-w-[68px] max-w-[68px] border-b border-r border-[#dce8f1] bg-[#f5f9fc] px-1 text-center text-[10px] font-semibold text-[#315773] min-[1800px]:left-[80px] min-[1800px]:h-[70px] min-[1800px]:w-[78px] min-[1800px]:min-w-[78px] min-[1800px]:max-w-[78px] min-[1800px]:text-[15px]">
+                <th className="sticky left-[28px] top-0 z-30 h-10 w-[68px] min-w-[68px] max-w-[68px] border-b border-r border-[#dce8f1] bg-[#f5f9fc] px-1 text-center text-[10px] font-semibold text-[#315773] min-[1800px]:left-[32px] min-[1800px]:h-[70px] min-[1800px]:w-[78px] min-[1800px]:min-w-[78px] min-[1800px]:max-w-[78px] min-[1800px]:text-[15px]">
                   Пара
                 </th>
 
@@ -212,14 +227,13 @@ export default function RoomGrid({
                   return (
                     <tr data-week-date={weekDate} key={`${weekDate}-${item.name}`} className="h-[72px] min-[1800px]:h-[100px]">
                       {periodIndex === 0 && (
-                        <th rowSpan={periods.length} className="sticky left-0 z-20 w-[96px] min-w-[96px] max-w-[96px] border-b border-r border-[#dce8f1] bg-[#fbfcfd] px-2 align-middle text-center min-[1800px]:w-[80px] min-[1800px]:min-w-[80px] min-[1800px]:max-w-[80px] min-[1800px]:px-1">
+                        <th rowSpan={periods.length} className="sticky left-0 z-20 w-[28px] min-w-[28px] max-w-[28px] border-b border-r border-[#dce8f1] bg-[#fbfcfd] px-0 align-middle text-center min-[1800px]:w-[32px] min-[1800px]:min-w-[32px] min-[1800px]:max-w-[32px]">
                           <div className="flex items-center justify-center">
                             <div className="flex rotate-[-90deg] items-center gap-3 whitespace-nowrap min-[1800px]:gap-4">
-                              <span className="text-[15px] font-bold capitalize leading-none text-[#365c75] min-[1800px]:text-[18px]">
+                              <span className="text-[12px] font-bold capitalize leading-none text-[#365c75] min-[1800px]:text-[15px]">
                                 {dayName}
                               </span>
-
-                              <span className="text-[12px] font-semibold leading-none text-[#71899b] min-[1800px]:text-[14px]">
+                              <span className="text-[10px] font-semibold leading-none text-[#71899b] min-[1800px]:text-[12px]">
                                 {dayDate}
                               </span>
                             </div>
@@ -227,12 +241,8 @@ export default function RoomGrid({
                         </th>
                       )}
 
-                      <th className={`sticky left-[96px] z-20 w-[68px] min-w-[68px] max-w-[68px] border-b border-r border-[#dce8f1] px-1 align-middle text-center min-[1800px]:left-[80px] min-[1800px]:w-[78px] min-[1800px]:min-w-[78px] min-[1800px]:max-w-[78px] ${current ? "bg-[#f1fbf5]" : "bg-[#f8fafc]"}`}>
-                        {current && (
-                          <span className="mx-auto mb-1 block h-2 w-2 rounded-full bg-[#26a65b] min-[1800px]:mb-2 min-[1800px]:h-3 min-[1800px]:w-3" />
-                        )}
-
-                        <span className={`block text-[9px] font-semibold leading-[1.15] min-[1800px]:text-[14px] ${current ? "text-[#168a46]" : "text-[#315773]"}`}>
+                     <th className={`sticky left-[36px] z-20 w-[68px] min-w-[68px] max-w-[68px] border-b border-r border-[#dce8f1] px-1 align-middle text-center min-[1800px]:left-[40px] min-[1800px]:w-[78px] min-[1800px]:min-w-[78px] min-[1800px]:max-w-[78px] ${current ? "bg-[#e0f8e9]" : "bg-[#f8fafc]"}`}>
+                        <span className={`block text-[9px] font-semibold leading-[1.15] min-[1800px]:text-[14px] ${current ? "text-[#15803d]" : "text-[#315773]"}`}>
                           {item.name}
                         </span>
 
@@ -241,7 +251,7 @@ export default function RoomGrid({
                             {time.start}
                           </span>
 
-                          <span className="my-1 block h-px w-[30px] bg-[#8aa0b2] opacity-60 min-[1800px]:my-2 min-[1800px]:w-[42px]" />
+                          <span className={`my-1 block h-px w-[30px] opacity-90 min-[1800px]:my-2 min-[1800px]:w-[42px] ${current ? "bg-[#16a34a]" : "bg-[#8aa0b2]"}`} />
 
                           <span className="whitespace-nowrap text-[6px] font-normal leading-none text-[#8aa0b2] min-[1800px]:text-[10px]">
                             {time.end}
@@ -250,30 +260,16 @@ export default function RoomGrid({
                       </th>
 
                       {sortedRooms.map((room) => {
-                        const lesson = getLesson(
-                          weeklySchedule[room.id],
-                          weekDate,
-                          lessonPeriod,
-                          weekType
-                        );
+                        const lesson = getLesson(weeklySchedule[room.id], weekDate, lessonPeriod, weekType);
 
                         return (
                           <td key={`${room.id}-${weekDate}-${lessonPeriod}`} className="h-[72px] w-[155px] min-w-[155px] max-w-[155px] border-b border-r border-[#dce8f1] p-0 align-middle last:border-r-0 min-[1800px]:h-[100px] min-[1800px]:w-[145px] min-[1800px]:min-w-[145px] min-[1800px]:max-w-[145px]">
-                            <button
-                              type="button"
-                              className={`relative flex h-full min-h-[72px] w-full flex-col items-center justify-center gap-1 overflow-hidden px-2 text-center transition min-[1800px]:min-h-[100px] min-[1800px]:gap-2 min-[1800px]:px-3 ${lesson ? "bg-[#FFD6D6] text-[#D93636] hover:bg-[#FFC2C2]" : "bg-[#D1F4DF] text-[#168A46] hover:bg-[#BDEECE]"}`}
-                              onClick={() => {
-                                if (lesson) {
-                                  setSelectedLesson(lesson);
-                                }
-                              }}
-                            >
+                            <button type="button" className={`relative flex h-full min-h-[72px] w-full flex-col items-center justify-center gap-1 overflow-hidden px-2 text-center transition min-[1800px]:min-h-[100px] min-[1800px]:gap-2 min-[1800px]:px-3 ${lesson ? "bg-[#FFD6D6] text-[#D93636] hover:bg-[#FFC2C2]" : "bg-[#D1F4DF] text-[#168A46] hover:bg-[#BDEECE]"}`} onClick={() => { if (lesson) setSelectedLesson(lesson); }}>
                               {lesson ? (
                                 <>
                                   <span className="truncate text-[9px] font-bold min-[1800px]:text-[16px]">
                                     Занята
                                   </span>
-
                                   <span className="max-w-[92%] truncate text-[7px] font-medium opacity-80 min-[1800px]:text-[12px]">
                                     {lesson.subject}
                                   </span>
@@ -329,19 +325,11 @@ export default function RoomGrid({
   );
 }
 
-function RoomCard({
-  room,
-  period,
-  view,
-}: {
-  room: Room;
-  period: number;
-  view: View;
-}) {
+function RoomCard({ room, period, view }: { room: Room; period: number; view: View }) {
   const lesson = room.lessons[period - 1];
 
   return (
-    <article className={`relative overflow-hidden rounded-2xl border bg-white transition min-[1800px]:rounded-xl ${lesson ? "border-[#f0d6d6]" : "border-[#dce8f1]"} ${view === "list" ? "flex min-h-[84px] items-center gap-5 px-5 py-4 min-[1800px]:min-h-[64px] min-[1800px]:gap-3 min-[1800px]:px-3 min-[1800px]:py-2.5" : "min-h-[150px] p-5 min-[1800px]:min-h-[110px] min-[1800px]:p-3"}`}>
+    <article className={`relative overflow-hidden rounded-2xl border transition min-[1800px]:rounded-xl ${lesson ? "border-[#f0d6d6] bg-[#FFD6D6]" : "border-[#c4ead4] bg-[#D1F4DF]"} ${view === "list" ? "flex min-h-[84px] items-center gap-5 px-5 py-4 min-[1800px]:min-h-[64px] min-[1800px]:gap-3 min-[1800px]:px-3 min-[1800px]:py-2.5" : "min-h-[150px] p-5 min-[1800px]:min-h-[110px] min-[1800px]:p-3"}`}>
       <div className={view === "list" ? "min-w-[90px] min-[1800px]:min-w-[70px]" : ""}>
         <h3 className="text-[16px] font-semibold text-[#12395e] min-[1800px]:text-[13px]">
           {room.number}
@@ -364,7 +352,7 @@ function RoomCard({
           </span>
         </div>
       ) : (
-        <p className={view === "list" ? "ml-auto text-[11px] text-[#8aa0b2] min-[1800px]:text-[8px]" : "mt-6 text-[11px] text-[#8aa0b2] min-[1800px]:mt-3 min-[1800px]:text-[8px]"}>
+        <p className={view === "list" ? "ml-auto text-[11px] text-[#168A46] min-[1800px]:text-[8px]" : "mt-6 text-[11px] text-[#168A46] min-[1800px]:mt-3 min-[1800px]:text-[8px]"}>
           Можно использовать
         </p>
       )}
