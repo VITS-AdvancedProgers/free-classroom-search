@@ -57,6 +57,31 @@ export default function Home() {
   const [viewLoaded, setViewLoaded] = useState(false);
   const [now, setNow] = useState(() => new Date());
   const [clockReady, setClockReady] = useState(false);
+  const [showEmbedModal, setShowEmbedModal] = useState(false);
+  const [copiedEmbedCode, setCopiedEmbedCode] = useState(false);
+  const [isEmbedMode, setIsEmbedMode] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setIsEmbedMode(params.get("embed") === "1");
+  }, []);
+
+  const embedUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}${window.location.pathname}?embed=1`
+      : "";
+
+  const embedCode = `<iframe src="${embedUrl}" width="100%" height="700" style="border:0;border-radius:12px;" loading="lazy" title="Расписание свободных аудиторий"></iframe>`;
+
+  async function copyEmbedCode() {
+    try {
+      await navigator.clipboard.writeText(embedCode);
+      setCopiedEmbedCode(true);
+      window.setTimeout(() => setCopiedEmbedCode(false), 2000);
+    } catch {
+      setCopiedEmbedCode(false);
+    }
+  }
 
   useEffect(() => {
     const savedView = localStorage.getItem("rooms-view");
@@ -139,7 +164,6 @@ export default function Home() {
     return rooms
       .filter((room) => {
         const roomFloor = room.number.match(/-(\d)/)?.[1];
-
         return floor === "all" || roomFloor === floor;
       })
       .sort((a, b) =>
@@ -217,13 +241,7 @@ export default function Home() {
             const isSelected = period === index;
 
             return (
-              <button
-                key={item.name}
-                type="button"
-                onClick={() => setPeriod(index)}
-                aria-pressed={isSelected}
-                className={`relative flex min-h-[64px] flex-col justify-center rounded-xl border px-4 py-3 text-left transition min-[1800px]:min-h-[76px] min-[1800px]:rounded-2xl min-[1800px]:border-[1.5px] min-[1800px]:px-5 min-[1800px]:py-4 ${isCurrent ? "border-[#26a65b] shadow-[0_0_0_2px_#26a65b]" : "border-[#dce8f1]"} ${isSelected ? "bg-[#eaf5ff] shadow-sm" : "bg-white hover:border-[#b7d7ed] hover:bg-[#fbfdff]"}`}
-              >
+              <button key={item.name} type="button" onClick={() => setPeriod(index)} aria-pressed={isSelected} className={`relative flex min-h-[64px] flex-col justify-center rounded-xl border px-4 py-3 text-left transition min-[1800px]:min-h-[76px] min-[1800px]:rounded-2xl min-[1800px]:border-[1.5px] min-[1800px]:px-5 min-[1800px]:py-4 ${isCurrent ? "border-[#26a65b] shadow-[0_0_0_2px_#26a65b]" : "border-[#dce8f1]"} ${isSelected ? "bg-[#eaf5ff] shadow-sm" : "bg-white hover:border-[#b7d7ed] hover:bg-[#fbfdff]"}`}>
                 {isCurrent && (
                   <span className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-[#26a65b] shadow-[0_0_0_3px_rgba(38,166,91,0.12)] min-[1800px]:right-5 min-[1800px]:top-5 min-[1800px]:h-3.5 min-[1800px]:w-3.5" title="Текущая пара" aria-label="Текущая пара" />
                 )}
@@ -248,15 +266,9 @@ export default function Home() {
           <div className="flex items-center justify-between gap-3 lg:justify-end min-[1800px]:gap-6">
             <div className="flex items-center gap-2 whitespace-nowrap text-[11px] font-medium text-[#64819b] min-[1800px]:gap-3 min-[1800px]:text-[14px]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#26a65b] min-[1800px]:h-2.5 min-[1800px]:w-2.5" />
-
               {isScheduleReady ? `${freeCount} свободно` : "Загрузка"}
-
-              <span className="text-[#c7d4de]">
-                ·
-              </span>
-
+              <span className="text-[#c7d4de]">·</span>
               <span className="h-1.5 w-1.5 rounded-full bg-[#d93636] min-[1800px]:h-2.5 min-[1800px]:w-2.5" />
-
               {isScheduleReady ? `${busyCount} занято` : ""}
             </div>
 
@@ -300,22 +312,53 @@ export default function Home() {
               На выбранном этаже аудитории не найдены.
             </div>
           ) : (
-            <RoomGrid
-              rooms={visibleRooms}
-              period={period + 1}
-              view={view}
-              weeklySchedule={weeklySchedule}
-              date={date}
-              weekType={weekType}
-            />
+            <RoomGrid rooms={visibleRooms} period={period + 1} view={view} weeklySchedule={weeklySchedule} date={date} weekType={weekType} />
           )}
         </div>
 
-        <footer className="flex items-center justify-center gap-2 px-4 py-8 text-[11px] text-[#91a7b9] sm:px-7 lg:px-10 min-[1800px]:gap-3 min-[1800px]:px-12 min-[1800px]:py-6 min-[1800px]:text-[13px]">
-          <span>Б корпус</span>
-          <span>·</span>
-          <span>{formattedDate}</span>
-        </footer>
+        {!isEmbedMode && (
+          <footer className="flex flex-col items-center justify-center gap-3 px-4 py-8 text-[11px] text-[#91a7b9] sm:flex-row sm:gap-4 sm:px-7 lg:px-10 min-[1800px]:gap-5 min-[1800px]:px-12 min-[1800px]:py-6 min-[1800px]:text-[13px]">
+            <span>Б корпус</span>
+            <span className="hidden sm:inline">·</span>
+            <span>{formattedDate}</span>
+            <button type="button" onClick={() => setShowEmbedModal(true)} className="font-medium text-[#247db8] transition hover:text-[#125b91] hover:underline">
+              Внедрение на сайт
+            </button>
+          </footer>
+        )}
+        
+        {showEmbedModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[rgba(18,52,81,0.4)] p-4 backdrop-blur-sm" onClick={() => setShowEmbedModal(false)}>
+            <div className="w-full max-w-[560px] rounded-2xl border border-[#dce8f1] bg-white p-5 shadow-2xl sm:p-7" onClick={(event) => event.stopPropagation()}>
+              <div className="mb-2 flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-bold text-[#12395e]">Внедрение на сайт</h2>
+                  <p className="mt-2 text-sm leading-6 text-[#7890a5]">
+                    Скопируйте HTML-код и вставьте его на страницу своего сайта. Расписание будет загружаться с актуальными данными.
+                  </p>
+                </div>
+                <button type="button" onClick={() => setShowEmbedModal(false)} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-xl text-[#7893aa] hover:bg-[#f1f7fb]" aria-label="Закрыть">
+                  ×
+                </button>
+              </div>
+
+              <label className="mt-5 block text-xs font-semibold text-[#64819b]">
+                HTML-код для вставки
+              </label>
+
+              <textarea readOnly value={embedCode} onFocus={(event) => event.currentTarget.select()} className="mt-2 min-h-[125px] w-full resize-y rounded-xl border border-[#dce8f1] bg-[#f6f9fc] p-3 font-mono text-xs leading-5 text-[#315773] outline-none focus:border-[#8bc4ed]" />
+
+              <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <button type="button" onClick={() => setShowEmbedModal(false)} className="rounded-xl border border-[#dce8f1] px-4 py-3 text-sm font-medium text-[#64819b] hover:bg-[#f6f9fc]">
+                  Закрыть
+                </button>
+                <button type="button" onClick={copyEmbedCode} className="rounded-xl bg-[#1683d8] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#126eb7]">
+                  {copiedEmbedCode ? "Код скопирован" : "Скопировать код"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
     </main>
   );

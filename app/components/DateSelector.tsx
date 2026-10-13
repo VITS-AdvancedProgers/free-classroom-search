@@ -287,7 +287,7 @@ export default function DateSelector({
               );
 
               return (
-                <button key={toDateString(calendarDate)} type="button" disabled={isDisabled} onClick={() => selectDate(calendarDate)} className="relative flex h-10 items-center justify-center rounded-xl sm:h-11 min-[1800px]:h-12">
+               <button key={toDateString(calendarDate)} type="button" disabled={isDisabled} onClick={() => selectDate(calendarDate)} style={isSunday ? { cursor: "default" } : isPast ? { cursor: "not-allowed" } : { cursor: "pointer" }} className={`relative flex h-10 items-center justify-center rounded-xl sm:h-11 min-[1800px]:h-12 ${isSunday ? "!cursor-default" : isPast ? "!cursor-not-allowed" : "cursor-pointer"}`}>
                   <span className={`flex h-9 w-9 items-center justify-center rounded-xl text-[12px] transition sm:h-10 sm:w-10 sm:text-[13px] min-[1800px]:h-11 min-[1800px]:w-11 min-[1800px]:text-[14px] ${selected && !isDisabled ? "bg-[#1d78c8] font-semibold text-white shadow-sm" : isToday && !isDisabled ? "border border-[#365873] bg-white font-medium text-[#365873]" : isDisabled ? "cursor-not-allowed text-[#d2dbe1]" : currentMonth ? "text-[#365873] hover:bg-[#f1f8fc] hover:text-[#1d78c8]" : "text-[#cbd5dc]"}`}>
                     {calendarDate.getDate()}
                   </span>
