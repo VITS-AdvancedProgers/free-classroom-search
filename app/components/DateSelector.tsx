@@ -209,49 +209,35 @@ export default function DateSelector({
 
   return (
     <div ref={containerRef} className="relative shrink-0">
-      <button
-        type="button"
-        onClick={() => setIsOpen((value) => !value)}
-        className="flex h-12 w-full min-w-[250px] cursor-pointer items-center gap-3 rounded-xl border border-[#dce9f3] bg-white px-4 text-left shadow-sm transition hover:border-[#b9d8ef] hover:shadow-md sm:min-w-[250px] min-[1800px]:h-[70px] min-[1800px]:min-w-[300px] min-[1800px]:gap-4 min-[1800px]:rounded-xl min-[1800px]:px-5"
-        aria-expanded={isOpen}
-        aria-haspopup="dialog"
-      >
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#eaf5ff] text-[#1d78c8] min-[1800px]:h-11 min-[1800px]:w-11 min-[1800px]:rounded-xl">
-          <CalendarDays size={18} strokeWidth={2} className="min-[1800px]:h-6 min-[1800px]:w-6" />
+      <button type="button" onClick={() => setIsOpen((value) => !value)} className="flex h-[66px] w-full min-w-[275px] cursor-pointer items-center gap-3 rounded-2xl border border-[#d7e6f1] bg-white px-3.5 text-left shadow-[0_2px_8px_rgba(18,57,94,0.08)] transition duration-200 hover:border-[#a9d1ee] hover:shadow-[0_4px_14px_rgba(18,57,94,0.12)] sm:min-w-[275px] min-[1800px]:h-[76px] min-[1800px]:min-w-[320px] min-[1800px]:gap-4 min-[1800px]:px-4" aria-expanded={isOpen} aria-haspopup="dialog">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#eaf5ff] text-[#1d78c8] min-[1800px]:h-12 min-[1800px]:w-12">
+          <CalendarDays size={20} strokeWidth={2} className="min-[1800px]:h-6 min-[1800px]:w-6" />
         </span>
 
-        <span className="flex min-w-0 flex-1 flex-col">
-          <span className="text-[9px] font-medium uppercase tracking-[0.4px] text-[#8aa0b2] min-[1800px]:text-[11px]">
+        <span className="flex min-w-0 flex-1 flex-col justify-center gap-1">
+          <span className="truncate text-[9px] font-semibold uppercase leading-none tracking-[0.65px] text-[#8aa0b2] min-[1800px]:text-[10px]">
             Выбранная дата
           </span>
 
-          <span className="mt-0.5 truncate text-[12px] font-semibold text-[#12395e] min-[1800px]:mt-1 min-[1800px]:text-[15px]">
+          <span className="truncate text-[14px] font-semibold leading-tight text-[#12395e] min-[1800px]:text-[16px]">
             {formatDate(date)}
           </span>
 
-          <span className="mt-0.5 truncate text-[8px] text-[#8aa0b2] min-[1800px]:mt-1 min-[1800px]:text-[10px]">
+          <span className="truncate text-[9px] leading-tight text-[#8aa0b2] min-[1800px]:text-[10px]">
             {weekNumber ? `Неделя ${weekNumber} · ` : ""}
             {weekLabel}
           </span>
         </span>
 
-        <ChevronRight size={17} strokeWidth={2} className={`shrink-0 text-[#7893aa] transition-transform ${isOpen ? "rotate-90" : ""} min-[1800px]:h-5 min-[1800px]:w-5`} />
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#7893aa] transition-colors hover:bg-[#f1f7fb]">
+          <ChevronRight size={18} strokeWidth={2} className={`transition-transform ${isOpen ? "rotate-90" : ""} min-[1800px]:h-5 min-[1800px]:w-5`} />
+        </span>
       </button>
 
       {isOpen && (
-        <div
-          className="absolute right-0 top-[calc(100%+8px)] z-50 w-[calc(100vw-24px)] max-w-[340px] overflow-hidden rounded-2xl border border-[#dce9f3] bg-white p-3 shadow-[0_20px_55px_rgba(18,57,94,0.16)] sm:p-4 min-[1800px]:top-[calc(100%+10px)] min-[1800px]:max-w-[390px] min-[1800px]:rounded-2xl min-[1800px]:p-5"
-          role="dialog"
-          aria-label="Выбор даты"
-        >
+        <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-[calc(100vw-24px)] max-w-[340px] overflow-hidden rounded-2xl border border-[#dce9f3] bg-white p-3 shadow-[0_20px_55px_rgba(18,57,94,0.16)] sm:p-4 min-[1800px]:top-[calc(100%+10px)] min-[1800px]:max-w-[390px] min-[1800px]:rounded-2xl min-[1800px]:p-5" role="dialog" aria-label="Выбор даты">
           <div className="flex items-center justify-between">
-            <button
-              type="button"
-              onClick={goToPreviousMonth}
-              disabled={currentMonthIsToday}
-              className={`flex h-9 w-9 items-center justify-center rounded-xl transition min-[1800px]:h-11 min-[1800px]:w-11 ${currentMonthIsToday ? "cursor-not-allowed text-[#cbd6de]" : "text-[#7893aa] hover:bg-[#eaf5ff] hover:text-[#1d78c8]"}`}
-              aria-label="Предыдущий месяц"
-            >
+            <button type="button" onClick={goToPreviousMonth} disabled={currentMonthIsToday} className={`flex h-9 w-9 items-center justify-center rounded-xl transition min-[1800px]:h-11 min-[1800px]:w-11 ${currentMonthIsToday ? "cursor-not-allowed text-[#cbd6de]" : "text-[#7893aa] hover:bg-[#eaf5ff] hover:text-[#1d78c8]"}`} aria-label="Предыдущий месяц">
               <ChevronLeft size={20} strokeWidth={2} className="min-[1800px]:h-6 min-[1800px]:w-6" />
             </button>
 
@@ -260,12 +246,7 @@ export default function DateSelector({
               {visibleMonth.getFullYear()}
             </div>
 
-            <button
-              type="button"
-              onClick={goToNextMonth}
-              className="flex h-9 w-9 items-center justify-center rounded-xl text-[#7893aa] transition hover:bg-[#eaf5ff] hover:text-[#1d78c8] min-[1800px]:h-11 min-[1800px]:w-11"
-              aria-label="Следующий месяц"
-            >
+            <button type="button" onClick={goToNextMonth} className="flex h-9 w-9 items-center justify-center rounded-xl text-[#7893aa] transition hover:bg-[#eaf5ff] hover:text-[#1d78c8] min-[1800px]:h-11 min-[1800px]:w-11" aria-label="Следующий месяц">
               <ChevronRight size={20} strokeWidth={2} className="min-[1800px]:h-6 min-[1800px]:w-6" />
             </button>
           </div>
@@ -282,10 +263,7 @@ export default function DateSelector({
 
           <div className="grid grid-cols-7">
             {weekdays.map((day) => (
-              <div
-                key={day}
-                className="flex h-8 items-center justify-center text-[10px] font-semibold text-[#8aa0b2] sm:h-9 sm:text-[11px] min-[1800px]:h-10 min-[1800px]:text-[12px]"
-              >
+              <div key={day} className="flex h-8 items-center justify-center text-[10px] font-semibold text-[#8aa0b2] sm:h-9 sm:text-[11px] min-[1800px]:h-10 min-[1800px]:text-[12px]">
                 {day}
               </div>
             ))}
@@ -309,13 +287,7 @@ export default function DateSelector({
               );
 
               return (
-                <button
-                  key={toDateString(calendarDate)}
-                  type="button"
-                  disabled={isDisabled}
-                  onClick={() => selectDate(calendarDate)}
-                  className="relative flex h-10 items-center justify-center rounded-xl sm:h-11 min-[1800px]:h-12"
-                >
+                <button key={toDateString(calendarDate)} type="button" disabled={isDisabled} onClick={() => selectDate(calendarDate)} className="relative flex h-10 items-center justify-center rounded-xl sm:h-11 min-[1800px]:h-12">
                   <span className={`flex h-9 w-9 items-center justify-center rounded-xl text-[12px] transition sm:h-10 sm:w-10 sm:text-[13px] min-[1800px]:h-11 min-[1800px]:w-11 min-[1800px]:text-[14px] ${selected && !isDisabled ? "bg-[#1d78c8] font-semibold text-white shadow-sm" : isToday && !isDisabled ? "border border-[#365873] bg-white font-medium text-[#365873]" : isDisabled ? "cursor-not-allowed text-[#d2dbe1]" : currentMonth ? "text-[#365873] hover:bg-[#f1f8fc] hover:text-[#1d78c8]" : "text-[#cbd5dc]"}`}>
                     {calendarDate.getDate()}
                   </span>
@@ -329,19 +301,11 @@ export default function DateSelector({
           </div>
 
           <div className="mt-3 flex items-center justify-between border-t border-[#eef4f8] pt-3 min-[1800px]:mt-4 min-[1800px]:pt-4">
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              className="rounded-lg px-3 py-2 text-[10px] font-medium text-[#7893aa] transition hover:bg-[#f5f9fc] hover:text-[#365873] min-[1800px]:px-4 min-[1800px]:py-2.5 min-[1800px]:text-[12px]"
-            >
+            <button type="button" onClick={() => setIsOpen(false)} className="rounded-lg px-3 py-2 text-[10px] font-medium text-[#7893aa] transition hover:bg-[#f5f9fc] hover:text-[#365873] min-[1800px]:px-4 min-[1800px]:py-2.5 min-[1800px]:text-[12px]">
               Закрыть
             </button>
 
-            <button
-              type="button"
-              onClick={goToToday}
-              className="rounded-lg bg-[#eaf5ff] px-3 py-2 text-[10px] font-semibold text-[#1d78c8] transition hover:bg-[#dff1ff] min-[1800px]:px-4 min-[1800px]:py-2.5 min-[1800px]:text-[12px]"
-            >
+            <button type="button" onClick={goToToday} className="rounded-lg bg-[#eaf5ff] px-3 py-2 text-[10px] font-semibold text-[#1d78c8] transition hover:bg-[#dff1ff] min-[1800px]:px-4 min-[1800px]:py-2.5 min-[1800px]:text-[12px]">
               Сегодня
             </button>
           </div>
